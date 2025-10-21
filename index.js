@@ -33,6 +33,7 @@ db.run(`
     cpf TEXT NOT NULL,
     data_consulta TEXT NOT NULL,
     diagnostico TEXT NOT NULL,
+    sintomas TEXT DEFAULT '',
     anamnese TEXT DEFAULT '',
     exames_solicitados TEXT DEFAULT '[]'  -- JSON: ["Hemograma", "RX tórax", ...]
   )
@@ -40,6 +41,7 @@ db.run(`
 
 // Adiciona colunas se faltarem (migração simples)
 db.serialize(() => {
+  db.run(`ALTER TABLE prontuarios ADD COLUMN sintomas TEXT DEFAULT ''`, (e)=>{});
   db.run(`ALTER TABLE prontuarios ADD COLUMN anamnese TEXT DEFAULT ''`, (e)=>{});
   db.run(`ALTER TABLE prontuarios ADD COLUMN exames_solicitados TEXT DEFAULT '[]'`, (e)=>{});
 });
@@ -211,16 +213,16 @@ ${examesBloco || '(sem exames disponíveis)'}
 
 // ------------------- Rotas CRUD Prontuário -------------------
 app.post('/prontuario', (req, res) => {
-  const { nome, cpf, data_consulta, diagnostico, anamnese = '', exames_solicitados = [] } = req.body || {};
+  const { nome, cpf, data_consulta, diagnostico, sintomas = '', anamnese = '', exames_solicitados = [] } = req.body || {};
 
   if (!nome || !cpf || !data_consulta || !diagnostico)
     return res.status(400).send('Campos obrigatórios: nome, cpf, data_consulta, diagnostico');
 
   const examesStr = Array.isArray(exames_solicitados) ? JSON.stringify(exames_solicitados) : '[]';
 
-  const sql = `INSERT INTO prontuarios (nome, cpf, data_consulta, diagnostico, anamnese, exames_solicitados)
-               VALUES (?,?,?,?,?,?)`;
-  db.run(sql, [nome, cpf, data_consulta, diagnostico, anamnese, examesStr], function (err) {
+  const sql = `INSERT INTO prontuarios (nome, cpf, data_consulta, diagnostico, sintomas, anamnese, exames_solicitados)
+               VALUES (?,?,?,?,?,?,?)`;
+  db.run(sql, [nome, cpf, data_consulta, diagnostico, sintomas, anamnese, examesStr], function (err) {
     if (err) return res.status(500).send(err.message);
     res.status(201).json({ message: 'Prontuário salvo!', id: this.lastID });
   });
@@ -228,7 +230,7 @@ app.post('/prontuario', (req, res) => {
 
 app.put('/prontuario/:id', (req, res) => {
   const { id } = req.params;
-  const { nome, cpf, data_consulta, diagnostico, anamnese = '', exames_solicitados = [] } = req.body || {};
+  const { nome, cpf, data_consulta, diagnostico, sintomas = '', anamnese = '', exames_solicitados = [] } = req.body || {};
 
   if (!id) return res.status(400).send('ID obrigatório para atualização');
   if (!nome || !cpf || !data_consulta || !diagnostico)
@@ -237,10 +239,10 @@ app.put('/prontuario/:id', (req, res) => {
   const examesStr = Array.isArray(exames_solicitados) ? JSON.stringify(exames_solicitados) : '[]';
 
   const sql = `UPDATE prontuarios
-               SET nome = ?, cpf = ?, data_consulta = ?, diagnostico = ?, anamnese = ?, exames_solicitados = ?
+               SET nome = ?, cpf = ?, data_consulta = ?, diagnostico = ?, sintomas = ?, anamnese = ?, exames_solicitados = ?
                WHERE id = ?`;
 
-  db.run(sql, [nome, cpf, data_consulta, diagnostico, anamnese, examesStr, id], function (err) {
+  db.run(sql, [nome, cpf, data_consulta, diagnostico, sintomas, anamnese, examesStr, id], function (err) {
     if (err) return res.status(500).send(err.message);
     if (this.changes === 0) return res.status(404).send('Prontuário não encontrado');
     res.json({ message: 'Prontuário atualizado!', id: Number(id) });
