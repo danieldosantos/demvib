@@ -30,6 +30,16 @@
     .chip button { border:none; background:transparent; cursor:pointer; padding:0 4px; }
     .hint { font-size:12px; color:#777; }
     .subtle { background:#fbfbfb; border:1px dashed #e5e5e5; border-radius:10px; padding:12px; }
+    .exam-card-grid { display:flex; flex-direction:column; gap:12px; }
+    .exam-card { border:1px solid #e6e6e6; border-radius:12px; padding:14px; background:#fafafa; }
+    .exam-card h4 { margin:0 0 8px; font-size:16px; }
+    .exam-card label { margin-top:10px; font-size:13px; text-transform:none; }
+    .exam-card textarea { min-height:90px; }
+    .exam-actions { margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+    .exam-results-list { margin-top:12px; border:1px dashed #d7d7d7; border-radius:10px; padding:10px; background:#fff; }
+    .exam-result-item { font-size:13px; margin-bottom:8px; }
+    .exam-result-item:last-child { margin-bottom:0; }
+    .exam-result-item pre { margin:6px 0 0; padding:8px; background:#0d1117; color:#c9d1d9; border-radius:8px; white-space:pre-wrap; }
   </style>
 </head>
 <body>
@@ -99,40 +109,16 @@
 
     <br/>
 
-    <div class="row">
-      <div>
-        <label>Tipo do exame</label>
-        <input id="ex_tipo" placeholder="Ex.: Hemograma, RX de tórax, PCR..." />
-      </div>
-      <div>
-        <label>Data do resultado</label>
-        <input id="ex_data" placeholder="YYYY-MM-DD" />
-      </div>
+    <h3>Resultados e anexos dos exames solicitados</h3>
+    <div id="examesSolicitadosCards" class="exam-card-grid">
+      <div class="muted">Adicione exames solicitados no prontuário para gerenciar resultados por aqui.</div>
     </div>
 
-    <label>Observações</label>
-    <input id="ex_obs" placeholder="Breve observação (opcional)" />
-
-    <div class="row">
-      <div>
-        <label>Resultado textual</label>
-        <textarea id="ex_texto" placeholder="Cole aqui o laudo/resultado (opcional se enviar arquivo)"></textarea>
-      </div>
-      <div>
-        <label>Arquivo do exame (PDF/IMG)</label>
-        <input id="ex_arquivo" type="file" />
-        <div class="hint">Se enviar arquivo, o resultado textual pode ficar vazio.</div>
-      </div>
+    <div class="actions" style="margin-top:8px;">
+      <button onclick="carregarExames()">🔄 Atualizar resultados</button>
     </div>
 
-    <div class="actions">
-      <button onclick="salvarExameTexto()">📝 Salvar resultado textual</button>
-      <button onclick="uploadExame()">📎 Anexar arquivo</button>
-      <button onclick="carregarExames()">🔄 Atualizar lista de exames</button>
-    </div>
-
-    <h3>Exames cadastrados</h3>
-    <div id="examesLista" class="muted">— nenhum carregado —</div>
+    <div id="examesLista" class="muted" style="margin-top:12px;">— selecione um prontuário —</div>
 
     <hr style="margin:16px 0; border:none; border-top:1px solid #eee" />
 
@@ -183,11 +169,9 @@
   const btnSalvar = document.getElementById('btnSalvar');
   const btnExcluir = document.getElementById('btnExcluir');
 
-  const exTipo = document.getElementById('ex_tipo');
-  const exData = document.getElementById('ex_data');
-  const exObs = document.getElementById('ex_obs');
-  const exTexto = document.getElementById('ex_texto');
-  const exArquivo = document.getElementById('ex_arquivo');
+  const examesCards = document.getElementById('examesSolicitadosCards');
+  const examesLista = document.getElementById('examesLista');
+  const EXAME_SEM_IDENTIFICACAO = 'Exame sem identificação';
 
   // --------------- estado
   let examesSolicitados = [];
@@ -195,6 +179,7 @@
   let pacienteSelecionadoNome = null;
   let hasExamResults = false;
   let prontuariosCache = [];
+  let examesPorTipo = {};
 
   function atualizarEstadoSelecao() {
     if (prontuarioSelecionado) {
@@ -218,6 +203,7 @@
     });
     chips.appendChild(prevInput);
     chipInput.value = '';
+    renderExamCards();
   }
   function remChip(i){ examesSolicitados.splice(i,1); renderChips(); }
   chipInput.addEventListener('keydown', (ev) => {
@@ -228,6 +214,198 @@
       else { chipInput.value = ''; }
     }
   });
+
+  function renderExamResultHtml(result) {
+    const meta = [];
+    if (result.id !== undefined && result.id !== null) meta.push(`ID ${escapeHtml(result.id)}`);
+    if (result.data_anexo) meta.push(`Data: ${escapeHtml(result.data_anexo)}`);
+    if (result.observacoes) meta.push(`Obs: ${escapeHtml(result.observacoes)}`);
+
+    const metaLine = meta.length ? meta.join(' • ') : '<span class="muted">Sem metadados informados.</span>';
+    const fileLine = result.arquivo_path
+      ? `<div><a href="${escapeHtml(result.arquivo_path)}" target="_blank">Abrir arquivo anexado</a></div>`
+      : '';
+    const textoLine = result.resultado_texto
+      ? `<pre>${escapeHtml(result.resultado_texto)}</pre>`
+      : '';
+
+    const emptyInfo = (!fileLine && !textoLine)
+      ? '<div class="muted">Nenhum resultado textual ou arquivo associado a este registro.</div>'
+      : '';
+
+    return `<div class="exam-result-item"><div>${metaLine}</div>${fileLine}${textoLine}${emptyInfo}</div>`;
+  }
+
+  function renderExamCards() {
+    if (!examesCards) return;
+    examesCards.innerHTML = '';
+
+    if (!prontuarioSelecionado) {
+      examesCards.innerHTML = '<div class="muted">Selecione um prontuário para registrar resultados.</div>';
+      return;
+    }
+
+    const nomes = new Set();
+    examesSolicitados.forEach((nome) => { if (nome) nomes.add(nome); });
+    Object.keys(examesPorTipo || {}).forEach((nome) => { if (nome) nomes.add(nome); });
+
+    if (nomes.size === 0) {
+      examesCards.innerHTML = '<div class="muted">Nenhum exame solicitado. Use o campo acima para adicioná-los.</div>';
+      return;
+    }
+
+    let idx = 0;
+    nomes.forEach((nomeExame) => {
+      const nomeSeguro = nomeExame || EXAME_SEM_IDENTIFICACAO;
+      const card = document.createElement('div');
+      card.className = 'exam-card';
+
+      const titulo = document.createElement('h4');
+      titulo.textContent = nomeSeguro;
+      card.appendChild(titulo);
+
+      const explicacao = document.createElement('div');
+      explicacao.className = 'hint';
+      explicacao.textContent = 'Registre o resultado textual ou anexe um arquivo.';
+      card.appendChild(explicacao);
+
+      const dataLabel = document.createElement('label');
+      dataLabel.textContent = 'Data de anexo';
+      card.appendChild(dataLabel);
+      const dataInput = document.createElement('input');
+      dataInput.type = 'date';
+      dataInput.placeholder = 'YYYY-MM-DD';
+      dataInput.id = `exam-data-${idx}`;
+      card.appendChild(dataInput);
+
+      const obsLabel = document.createElement('label');
+      obsLabel.textContent = 'Observações';
+      card.appendChild(obsLabel);
+      const obsInput = document.createElement('input');
+      obsInput.placeholder = 'Breve observação (opcional)';
+      obsInput.id = `exam-obs-${idx}`;
+      card.appendChild(obsInput);
+
+      const textoLabel = document.createElement('label');
+      textoLabel.textContent = 'Resultado textual';
+      card.appendChild(textoLabel);
+      const textoArea = document.createElement('textarea');
+      textoArea.placeholder = 'Cole aqui o laudo/resultado (opcional se enviar arquivo)';
+      textoArea.id = `exam-texto-${idx}`;
+      card.appendChild(textoArea);
+
+      const actionsTexto = document.createElement('div');
+      actionsTexto.className = 'exam-actions';
+      const salvarBtn = document.createElement('button');
+      salvarBtn.textContent = '📝 Salvar resultado textual';
+      salvarBtn.onclick = () => salvarExameTextoCard(nomeExame, {
+        dataId: dataInput.id,
+        obsId: obsInput.id,
+        textoId: textoArea.id
+      });
+      actionsTexto.appendChild(salvarBtn);
+      card.appendChild(actionsTexto);
+
+      const arquivoLabel = document.createElement('label');
+      arquivoLabel.textContent = 'Arquivo do exame (PDF/IMG)';
+      card.appendChild(arquivoLabel);
+      const arquivoInput = document.createElement('input');
+      arquivoInput.type = 'file';
+      arquivoInput.id = `exam-arquivo-${idx}`;
+      card.appendChild(arquivoInput);
+      const arquivoHint = document.createElement('div');
+      arquivoHint.className = 'hint';
+      arquivoHint.textContent = 'Se enviar arquivo, o resultado textual pode ficar vazio.';
+      card.appendChild(arquivoHint);
+
+      const actionsArquivo = document.createElement('div');
+      actionsArquivo.className = 'exam-actions';
+      const uploadBtn = document.createElement('button');
+      uploadBtn.textContent = '📎 Anexar arquivo';
+      uploadBtn.onclick = () => uploadExameCard(nomeExame, {
+        dataId: dataInput.id,
+        obsId: obsInput.id,
+        fileId: arquivoInput.id
+      });
+      actionsArquivo.appendChild(uploadBtn);
+      card.appendChild(actionsArquivo);
+
+      const resultados = document.createElement('div');
+      resultados.className = 'exam-results-list';
+      const chaveConsulta = nomeExame || EXAME_SEM_IDENTIFICACAO;
+      const registros = Array.isArray(examesPorTipo?.[chaveConsulta]) ? examesPorTipo[chaveConsulta] : [];
+      if (!registros.length) {
+        resultados.innerHTML = '<div class="muted">Sem anexos ou resultados registrados.</div>';
+      } else {
+        resultados.innerHTML = registros.map(renderExamResultHtml).join('');
+      }
+      card.appendChild(resultados);
+
+      examesCards.appendChild(card);
+      idx += 1;
+    });
+  }
+
+  async function salvarExameTextoCard(nomeExame, refs = {}) {
+    if (!prontuarioSelecionado) { out.textContent = 'Selecione um prontuário.'; return; }
+    const textarea = refs.textoId ? document.getElementById(refs.textoId) : null;
+    const texto = (textarea?.value || '').trim();
+    if (!texto) { out.textContent = 'Informe o resultado textual antes de salvar.'; return; }
+
+    const data = refs.dataId ? (document.getElementById(refs.dataId)?.value || '') : '';
+    const obs = refs.obsId ? (document.getElementById(refs.obsId)?.value || '') : '';
+    const tipoFinal = (nomeExame || '').trim() || EXAME_SEM_IDENTIFICACAO;
+
+    try {
+      const r = await fetch('/exames/texto', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          prontuario_id: prontuarioSelecionado,
+          tipo: tipoFinal,
+          observacoes: obs,
+          resultado_texto: texto,
+          data_anexo: data
+        })
+      });
+      const t = await r.text();
+      out.textContent = t;
+      if (r.ok && textarea) textarea.value = '';
+      carregarExames();
+    } catch (e) {
+      out.textContent = 'Erro ao salvar resultado: ' + e.message;
+    }
+  }
+
+  async function uploadExameCard(nomeExame, refs = {}) {
+    if (!prontuarioSelecionado) { out.textContent = 'Selecione um prontuário.'; return; }
+    const fileInput = refs.fileId ? document.getElementById(refs.fileId) : null;
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+      out.textContent = 'Escolha um arquivo.';
+      return;
+    }
+
+    const data = refs.dataId ? (document.getElementById(refs.dataId)?.value || '') : '';
+    const obs = refs.obsId ? (document.getElementById(refs.obsId)?.value || '') : '';
+    const tipoFinal = (nomeExame || '').trim() || EXAME_SEM_IDENTIFICACAO;
+
+    try {
+      const fd = new FormData();
+      fd.append('prontuario_id', prontuarioSelecionado);
+      fd.append('tipo', tipoFinal);
+      fd.append('observacoes', obs);
+      fd.append('data_anexo', data);
+      fd.append('arquivo', fileInput.files[0]);
+
+      const r = await fetch('/exames/upload', { method:'POST', body: fd });
+      const t = await r.text();
+      out.textContent = t;
+      if (r.ok) fileInput.value = '';
+      carregarExames();
+    } catch (e) {
+      out.textContent = 'Erro no upload: ' + e.message;
+    }
+  }
 
   // --------------- previews
   function syncPreviews(){ previewSint.value = sintomas.value; previewAnam.value = anamnese.value; }
@@ -422,17 +600,19 @@
     sintomas.value = '';
     anamnese.value = '';
     diag.value = '';
+    prontuarioSelecionado = null;
+    pacienteSelecionadoNome = null;
     examesSolicitados = [];
+    examesPorTipo = {};
     renderChips();
+    renderExamCards();
     setBadge('');
     syncPreviews();
     out.textContent = 'Formulário limpo.';
-    prontuarioSelecionado = null;
-    pacienteSelecionadoNome = null;
     selId.textContent = '—';
     exmId.textContent = '—';
     exmNome.textContent = '—';
-    document.getElementById('examesLista').textContent = '— selecione um prontuário —';
+    examesLista.textContent = '— selecione um prontuário —';
     atualizarEstadoSelecao();
     atualizarDisponibilidadeIA();
   }
@@ -452,86 +632,50 @@
   // --------------- Exames
   async function carregarExames() {
     hasExamResults = false;
+    examesPorTipo = {};
+
     if (!prontuarioSelecionado) {
-      document.getElementById('examesLista').textContent = '— selecione um prontuário —';
-      atualizarDisponibilidadeIA(); return;
+      examesLista.textContent = '— selecione um prontuário —';
+      renderExamCards();
+      atualizarDisponibilidadeIA();
+      return;
     }
+
     try {
       const r = await fetch(`/exames?prontuario_id=${prontuarioSelecionado}`);
       const arr = await r.json();
 
       if (Array.isArray(arr)) {
-        hasExamResults = arr.some(e =>
-          (e.arquivo_path && e.arquivo_path.trim() !== '') ||
-          (e.resultado_texto && e.resultado_texto.trim() !== '')
-        );
+        arr.forEach((e) => {
+          const nomeChave = (typeof e.tipo === 'string' && e.tipo.trim()) ? e.tipo.trim() : EXAME_SEM_IDENTIFICACAO;
+          const normalizado = {
+            ...e,
+            data_anexo: e.data_anexo || e.data_resultado || ''
+          };
+          if (!examesPorTipo[nomeChave]) examesPorTipo[nomeChave] = [];
+          examesPorTipo[nomeChave].push(normalizado);
+        });
+        hasExamResults = arr.some((e) => {
+          const temArquivo = typeof e.arquivo_path === 'string' && e.arquivo_path.trim() !== '';
+          const temTexto = typeof e.resultado_texto === 'string' && e.resultado_texto.trim() !== '';
+          return temArquivo || temTexto;
+        });
       }
 
       if (!Array.isArray(arr) || arr.length === 0) {
-        document.getElementById('examesLista').textContent = '— nenhum exame —';
-        atualizarDisponibilidadeIA(); return;
+        examesLista.textContent = 'Nenhum resultado registrado ainda.';
+      } else {
+        examesLista.textContent = 'Resultados exibidos nos cartões acima.';
       }
-      const rows = arr.map(e => {
-        const file = e.arquivo_path ? `<a href="${e.arquivo_path}" target="_blank">arquivo</a>` : '';
-        const resTxt = e.resultado_texto ? `<pre style="white-space:pre-wrap">${escapeHtml(e.resultado_texto)}</pre>` : '';
-        return `<tr>
-          <td>${e.id}</td>
-          <td><strong>${escapeHtml(e.tipo || '')}</strong><br><span class="muted">${escapeHtml(e.data_resultado || '')}</span></td>
-          <td>${escapeHtml(e.observacoes || '')}</td>
-          <td>${file || '-'}</td>
-          <td>${resTxt || '-'}</td>
-        </tr>`;
-      }).join('');
-      document.getElementById('examesLista').innerHTML = `
-        <table>
-          <thead><tr><th>ID</th><th>Exame/Data</th><th>Obs</th><th>Arquivo</th><th>Resultado</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>`;
+
+      renderExamCards();
       atualizarDisponibilidadeIA();
     } catch (e) {
-      document.getElementById('examesLista').textContent = 'Erro ao carregar exames: ' + e.message;
+      examesLista.textContent = 'Erro ao carregar exames: ' + e.message;
+      examesPorTipo = {};
+      renderExamCards();
       atualizarDisponibilidadeIA();
     }
-  }
-
-  async function salvarExameTexto() {
-    if (!prontuarioSelecionado) { out.textContent = 'Selecione um prontuário.'; return; }
-    try {
-      const r = await fetch('/exames/texto', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          prontuario_id: prontuarioSelecionado,
-          tipo: exTipo.value || '',
-          observacoes: exObs.value || '',
-          resultado_texto: exTexto.value || '',
-          data_resultado: exData.value || ''
-        })
-      });
-      const t = await r.text();
-      out.textContent = t;
-      carregarExames();
-      exTexto.value = '';
-    } catch (e) { out.textContent = 'Erro ao salvar resultado: ' + e.message; }
-  }
-
-  async function uploadExame() {
-    if (!prontuarioSelecionado) { out.textContent = 'Selecione um prontuário.'; return; }
-    if (!exArquivo.files || exArquivo.files.length === 0) { out.textContent = 'Escolha um arquivo.'; return; }
-    try {
-      const fd = new FormData();
-      fd.append('prontuario_id', prontuarioSelecionado);
-      fd.append('tipo', exTipo.value || '');
-      fd.append('observacoes', exObs.value || '');
-      fd.append('data_resultado', exData.value || '');
-      fd.append('arquivo', exArquivo.files[0]);
-
-      const r = await fetch('/exames/upload', { method:'POST', body: fd });
-      const t = await r.text();
-      out.textContent = t;
-      exArquivo.value = '';
-      carregarExames();
-    } catch (e) { out.textContent = 'Erro no upload: ' + e.message; }
   }
 
   // --------------- Gating IA
@@ -551,7 +695,7 @@
     }
   }
   const examesObserver = new MutationObserver(atualizarDisponibilidadeIA);
-  examesObserver.observe(document.getElementById('examesLista'), { childList: true, subtree: true });
+  if (examesCards) examesObserver.observe(examesCards, { childList: true, subtree: true });
 
   // --------------- utils
   function escapeHtml(s='') {

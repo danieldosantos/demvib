@@ -81,7 +81,7 @@ const upload = multer({ storage });
 function fetchExamsSummary(prontuario_id) {
   return new Promise((resolve, reject) => {
     db.all(
-      `SELECT id, tipo, observacoes, arquivo_path, resultado_texto, data_resultado
+      `SELECT id, tipo, observacoes, arquivo_path, resultado_texto, data_resultado AS data_anexo
        FROM exames WHERE prontuario_id = ? ORDER BY created_at DESC`,
       [prontuario_id],
       (err, rows) => {
@@ -90,12 +90,13 @@ function fetchExamsSummary(prontuario_id) {
         const lines = rows.map(r => {
           const parts = [];
           if (r.tipo) parts.push(`Tipo: ${r.tipo}`);
-          if (r.data_resultado) parts.push(`Data: ${r.data_resultado}`);
-          if (r.resultado_texto) parts.push(`Resultado: ${r.resultado_texto}`);
+          if (r.data_anexo) parts.push(`Data de anexo: ${r.data_anexo}`);
+          if (r.resultado_texto) parts.push(`Resultado textual: ${r.resultado_texto}`);
           if (r.observacoes) parts.push(`Obs: ${r.observacoes}`);
           if (r.archivo_path || r.arquivo_path) {
             const p = r.archivo_path || r.arquivo_path; // typo-safe
             parts.push(`Arquivo: ${p}`);
+            if (!r.resultado_texto) parts.push('Sem laudo textual: interpretar arquivo anexado.');
           }
           return `- ${parts.join(' | ')}`;
         });
@@ -274,30 +275,32 @@ app.get('/prontuarios', (_req, res) => {
 
 // Upload de arquivo de exame
 app.post('/exames/upload', upload.single('arquivo'), (req, res) => {
-  const { prontuario_id, tipo = '', observacoes = '', data_resultado = '' } = req.body || {};
+  const { prontuario_id, tipo = '', observacoes = '', data_anexo = '', data_resultado = '' } = req.body || {};
   if (!prontuario_id) return res.status(400).json({ error: 'Informe prontuario_id' });
   if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado (campo "arquivo")' });
 
   const arquivo_path = `/uploads/${req.file.filename}`;
   const sql = `INSERT INTO exames (prontuario_id, tipo, observacoes, arquivo_path, resultado_texto, data_resultado)
                VALUES (?,?,?,?,?,?)`;
-  db.run(sql, [prontuario_id, tipo, observacoes, arquivo_path, null, data_resultado || null], function (err) {
+  const dataFinal = data_anexo || data_resultado || '';
+  db.run(sql, [prontuario_id, tipo, observacoes, arquivo_path, null, dataFinal || null], function (err) {
     if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ message: 'Exame anexado com sucesso', id: this.lastID, arquivo_path });
+    res.status(201).json({ message: 'Exame anexado com sucesso', id: this.lastID, arquivo_path, data_anexo: dataFinal || null });
   });
 });
 
 // Resultado textual (sem arquivo)
 app.post('/exames/texto', (req, res) => {
-  const { prontuario_id, tipo = '', observacoes = '', resultado_texto = '', data_resultado = '' } = req.body || {};
+  const { prontuario_id, tipo = '', observacoes = '', resultado_texto = '', data_anexo = '', data_resultado = '' } = req.body || {};
   if (!prontuario_id) return res.status(400).json({ error: 'Informe prontuario_id' });
   if (!resultado_texto.trim()) return res.status(400).json({ error: 'resultado_texto vazio' });
 
   const sql = `INSERT INTO exames (prontuario_id, tipo, observacoes, arquivo_path, resultado_texto, data_resultado)
                VALUES (?,?,?,?,?,?)`;
-  db.run(sql, [prontuario_id, tipo, observacoes, null, resultado_texto, data_resultado || null], function (err) {
+  const dataFinal = data_anexo || data_resultado || '';
+  db.run(sql, [prontuario_id, tipo, observacoes, null, resultado_texto, dataFinal || null], function (err) {
     if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ message: 'Resultado registrado', id: this.lastID });
+    res.status(201).json({ message: 'Resultado registrado', id: this.lastID, data_anexo: dataFinal || null });
   });
 });
 
@@ -312,7 +315,11 @@ app.get('/exames', (req, res) => {
     [prontuario_id],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
+      const mapped = rows.map(r => ({
+        ...r,
+        data_anexo: r.data_resultado
+      }));
+      res.json(mapped);
     }
   );
 });
