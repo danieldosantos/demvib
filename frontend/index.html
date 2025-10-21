@@ -67,8 +67,9 @@
     </div>
 
     <div class="actions">
-      <button onclick="salvar()">💾 Salvar prontuário</button>
+      <button id="btnSalvar" onclick="salvar()">💾 Salvar prontuário</button>
       <button onclick="listar()">📄 Listar prontuários</button>
+      <button id="btnExcluir" onclick="excluir()" disabled>🗑️ Excluir prontuário</button>
       <button onclick="limpar()">🧹 Limpar</button>
       <span class="muted">Selecionado: <span id="sel-id">—</span></span>
     </div>
@@ -179,6 +180,9 @@
   const exmId = document.getElementById('exm-id');
   const exmNome = document.getElementById('exm-nome');
 
+  const btnSalvar = document.getElementById('btnSalvar');
+  const btnExcluir = document.getElementById('btnExcluir');
+
   const exTipo = document.getElementById('ex_tipo');
   const exData = document.getElementById('ex_data');
   const exObs = document.getElementById('ex_obs');
@@ -190,6 +194,17 @@
   let prontuarioSelecionado = null;
   let pacienteSelecionadoNome = null;
   let hasExamResults = false;
+  let prontuariosCache = [];
+
+  function atualizarEstadoSelecao() {
+    if (prontuarioSelecionado) {
+      btnSalvar.textContent = '💾 Atualizar prontuário';
+      btnExcluir.disabled = false;
+    } else {
+      btnSalvar.textContent = '💾 Salvar prontuário';
+      btnExcluir.disabled = true;
+    }
+  }
 
   // --------------- chips
   function renderChips() {
@@ -318,15 +333,22 @@
         exames_solicitados: examesSolicitados
       };
 
-      const r = await fetch('/prontuario', {
-        method: 'POST',
+      const isUpdate = Boolean(prontuarioSelecionado);
+      const url = isUpdate ? `/prontuario/${prontuarioSelecionado}` : '/prontuario';
+      const method = isUpdate ? 'PUT' : 'POST';
+
+      const r = await fetch(url, {
+        method,
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(body)
       });
       const txt = await r.text();
       out.textContent = txt;
       listar();
-      try { const j = JSON.parse(txt); if (j.id) selecionarProntuario(j.id, body.nome); } catch {}
+      try {
+        const j = JSON.parse(txt);
+        if (j.id) selecionarProntuario(j.id, body.nome, { atualizarForm: false });
+      } catch {}
     } catch (e) { out.textContent = 'Erro ao salvar: ' + e.message; }
   }
 
@@ -334,6 +356,7 @@
     try {
       const r = await fetch('/prontuarios');
       const arr = await r.json();
+      prontuariosCache = Array.isArray(arr) ? arr : [];
       if (!Array.isArray(arr) || arr.length === 0) { lista.innerHTML = '— sem dados —'; return; }
       const rows = arr.map(p => `
         <tr>
@@ -343,7 +366,7 @@
           <td><pre style="white-space:pre-wrap;max-width:420px">${escapeHtml(p.diagnostico || '')}</pre></td>
           <td>
             <div class="muted">${(p.exames_solicitados||[]).map(escapeHtml).join(', ')}</div>
-            <button onclick="selecionarProntuario(${p.id}, '${escapeAttr(p.nome)}')">Selecionar</button>
+            <button onclick="selecionarProntuario(${p.id})">Selecionar</button>
           </td>
         </tr>`).join('');
       lista.innerHTML = `
@@ -351,17 +374,43 @@
           <thead><tr><th>ID</th><th>Paciente</th><th>Data</th><th>Diagnóstico</th><th>Ações</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>`;
+
+      if (prontuarioSelecionado) {
+        const atual = prontuariosCache.find(p => Number(p.id) === Number(prontuarioSelecionado));
+        if (atual) {
+          preencherFormulario(atual);
+          atualizarEstadoSelecao();
+        }
+      }
     } catch (e) { lista.innerHTML = 'Erro ao listar: ' + escapeHtml(e.message); }
   }
 
-  function selecionarProntuario(id, nomePaciente='') {
+  function preencherFormulario(prontuario) {
+    if (!prontuario) return;
+    nome.value = prontuario.nome || '';
+    cpf.value = prontuario.cpf || '';
+    dataC.value = prontuario.data_consulta || '';
+    sintomas.value = prontuario.sintomas || '';
+    anamnese.value = prontuario.anamnese || '';
+    diag.value = prontuario.diagnostico || '';
+    examesSolicitados = Array.isArray(prontuario.exames_solicitados)
+      ? [...prontuario.exames_solicitados]
+      : [];
+    renderChips();
+    syncPreviews();
+  }
+
+  function selecionarProntuario(id, _nomePaciente='', opts = {}) {
     prontuarioSelecionado = Number(id);
-    pacienteSelecionadoNome = nomePaciente || pacienteSelecionadoNome;
+    const atual = prontuariosCache.find(p => Number(p.id) === prontuarioSelecionado);
+    pacienteSelecionadoNome = (atual && atual.nome) || _nomePaciente || pacienteSelecionadoNome;
     selId.textContent = String(prontuarioSelecionado);
     exmId.textContent = String(prontuarioSelecionado);
     exmNome.textContent = pacienteSelecionadoNome || '—';
+    if (opts.atualizarForm !== false) preencherFormulario(atual);
     syncPreviews();
     carregarExames();
+    atualizarEstadoSelecao();
     setTimeout(atualizarDisponibilidadeIA, 300);
   }
 
@@ -377,7 +426,26 @@
     setBadge('');
     syncPreviews();
     out.textContent = 'Formulário limpo.';
+    prontuarioSelecionado = null;
+    pacienteSelecionadoNome = null;
+    selId.textContent = '—';
+    exmId.textContent = '—';
+    exmNome.textContent = '—';
+    document.getElementById('examesLista').textContent = '— selecione um prontuário —';
+    atualizarEstadoSelecao();
     atualizarDisponibilidadeIA();
+  }
+
+  async function excluir() {
+    if (!prontuarioSelecionado) { out.textContent = 'Selecione um prontuário.'; return; }
+    if (!confirm('Tem certeza que deseja excluir este prontuário? Esta ação é irreversível.')) return;
+    try {
+      const r = await fetch(`/prontuario/${prontuarioSelecionado}`, { method: 'DELETE' });
+      const txt = await r.text();
+      out.textContent = txt;
+      limpar();
+      listar();
+    } catch (e) { out.textContent = 'Erro ao excluir: ' + e.message; }
   }
 
   // --------------- Exames
@@ -496,6 +564,7 @@
   listar();
   syncPreviews();
   atualizarDisponibilidadeIA();
+  atualizarEstadoSelecao();
 </script>
 </body>
 </html>

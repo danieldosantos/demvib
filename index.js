@@ -22,6 +22,9 @@ const db = new sqlite3.Database('./prontuarios.db', (err) => {
   else console.log('🗄️  Banco SQLite conectado com sucesso.');
 });
 
+// Garante chaves estrangeiras (necessário no SQLite)
+db.run('PRAGMA foreign_keys = ON');
+
 // Tabela principal
 db.run(`
   CREATE TABLE IF NOT EXISTS prontuarios (
@@ -220,6 +223,38 @@ app.post('/prontuario', (req, res) => {
   db.run(sql, [nome, cpf, data_consulta, diagnostico, anamnese, examesStr], function (err) {
     if (err) return res.status(500).send(err.message);
     res.status(201).json({ message: 'Prontuário salvo!', id: this.lastID });
+  });
+});
+
+app.put('/prontuario/:id', (req, res) => {
+  const { id } = req.params;
+  const { nome, cpf, data_consulta, diagnostico, anamnese = '', exames_solicitados = [] } = req.body || {};
+
+  if (!id) return res.status(400).send('ID obrigatório para atualização');
+  if (!nome || !cpf || !data_consulta || !diagnostico)
+    return res.status(400).send('Campos obrigatórios: nome, cpf, data_consulta, diagnostico');
+
+  const examesStr = Array.isArray(exames_solicitados) ? JSON.stringify(exames_solicitados) : '[]';
+
+  const sql = `UPDATE prontuarios
+               SET nome = ?, cpf = ?, data_consulta = ?, diagnostico = ?, anamnese = ?, exames_solicitados = ?
+               WHERE id = ?`;
+
+  db.run(sql, [nome, cpf, data_consulta, diagnostico, anamnese, examesStr, id], function (err) {
+    if (err) return res.status(500).send(err.message);
+    if (this.changes === 0) return res.status(404).send('Prontuário não encontrado');
+    res.json({ message: 'Prontuário atualizado!', id: Number(id) });
+  });
+});
+
+app.delete('/prontuario/:id', (req, res) => {
+  const { id } = req.params;
+  if (!id) return res.status(400).send('ID obrigatório para exclusão');
+
+  db.run(`DELETE FROM prontuarios WHERE id = ?`, [id], function (err) {
+    if (err) return res.status(500).send(err.message);
+    if (this.changes === 0) return res.status(404).send('Prontuário não encontrado');
+    res.json({ message: 'Prontuário excluído!', id: Number(id) });
   });
 });
 
