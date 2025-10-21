@@ -1,0 +1,134 @@
+cat > frontend/index.html <<'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MedVibe</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; max-width: 720px; margin: 24px auto; }
+    h1 { margin-top: 0; }
+    label { display:block; margin-top: 12px; font-weight:600; }
+    input, textarea { width:100%; padding:8px; margin-top:6px; box-sizing: border-box; }
+    .row { display:flex; gap:12px; }
+    .row > div { flex:1; }
+    .actions { margin-top: 16px; display:flex; gap: 12px; flex-wrap: wrap; }
+    button { padding:10px 14px; cursor:pointer; border:1px solid #ddd; border-radius:8px; background:#fafafa; }
+    button:hover { background:#f0f0f0; }
+    pre { background:#111; color:#0f0; padding:12px; border-radius:8px; overflow:auto; }
+    .hint { color:#666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>📋 Prontuário do Paciente</h1>
+
+  <label>Nome</label>
+  <input id="nome" placeholder="Ex.: Ana Souza">
+
+  <div class="row">
+    <div>
+      <label>CPF</label>
+      <input id="cpf" placeholder="000.000.000-00">
+    </div>
+    <div>
+      <label>Data da consulta</label>
+      <input id="data" placeholder="YYYY-MM-DD">
+      <div class="hint">Ex.: 2025-10-21</div>
+    </div>
+  </div>
+
+  <label>Sintomas</label>
+  <textarea id="sintomas" rows="3" placeholder="Descreva sintomas, duração, intensidade..."></textarea>
+
+  <div class="actions">
+    <button id="btnIa" type="button">🪄 Sugerir diagnóstico (IA)</button>
+  </div>
+
+  <label>Diagnóstico</label>
+  <textarea id="diag" rows="3" placeholder="Será preenchido automaticamente pela IA ou escreva manualmente."></textarea>
+
+  <div class="actions">
+    <button onclick="salvar()">💾 Salvar prontuário</button>
+    <button onclick="listar()">📄 Listar prontuários</button>
+    <button onclick="limpar()">🧹 Limpar</button>
+  </div>
+
+  <h3>Saída</h3>
+  <pre id="out">Aguardando ações…</pre>
+
+  <script>
+    const out = document.getElementById('out');
+    const nome = document.getElementById('nome');
+    const cpf = document.getElementById('cpf');
+    const data = document.getElementById('data');
+    const sintomas = document.getElementById('sintomas');
+    const diag = document.getElementById('diag');
+    const btnIa = document.getElementById('btnIa');
+
+    btnIa.addEventListener('click', async () => {
+      try {
+        const body = { sintomas: sintomas.value || '' };
+        const r = await fetch('/ai-diagnostico', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(body)
+        });
+        if (!r.ok) throw new Error('Falha ao consultar IA');
+        const json = await r.json();
+        diag.value = json.sugestao || '(sem sugestão)';
+        out.textContent = 'IA sugeriu: ' + diag.value;
+      } catch (e) {
+        out.textContent = 'Erro na IA: ' + e.message;
+      }
+    });
+
+    function validaCampos() {
+      if (!nome.value.trim() || !cpf.value.trim() || !data.value.trim()) {
+        out.textContent = 'Preencha Nome, CPF e Data.';
+        return false;
+      }
+      return true;
+    }
+
+    async function salvar() {
+      try {
+        if (!validaCampos()) return;
+        const body = {
+          nome: nome.value,
+          cpf: cpf.value,
+          data_consulta: data.value,
+          diagnostico: diag.value
+        };
+        const r = await fetch('/prontuario', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(body)
+        });
+        const text = await r.text();
+        out.textContent = text;
+      } catch (e) {
+        out.textContent = 'Erro ao salvar: ' + e.message;
+      }
+    }
+
+    async function listar() {
+      try {
+        const r = await fetch('/prontuarios');
+        const json = await r.json();
+        out.textContent = JSON.stringify(json, null, 2);
+      } catch (e) {
+        out.textContent = 'Erro ao listar: ' + e.message;
+      }
+    }
+
+    function limpar() {
+      nome.value = '';
+      cpf.value = '';
+      data.value = '';
+      sintomas.value = '';
+      diag.value = '';
+      out.textContent = 'Formulário limpo.';
+    }
+  </script>
+</body>
+</html>
+EOF
