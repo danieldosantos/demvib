@@ -1,134 +1,501 @@
-cat > frontend/index.html <<'EOF'
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>MedVibe</title>
   <style>
-    body { font-family: system-ui, Arial, sans-serif; max-width: 720px; margin: 24px auto; }
-    h1 { margin-top: 0; }
-    label { display:block; margin-top: 12px; font-weight:600; }
-    input, textarea { width:100%; padding:8px; margin-top:6px; box-sizing: border-box; }
-    .row { display:flex; gap:12px; }
-    .row > div { flex:1; }
-    .actions { margin-top: 16px; display:flex; gap: 12px; flex-wrap: wrap; }
-    button { padding:10px 14px; cursor:pointer; border:1px solid #ddd; border-radius:8px; background:#fafafa; }
-    button:hover { background:#f0f0f0; }
-    pre { background:#111; color:#0f0; padding:12px; border-radius:8px; overflow:auto; }
-    .hint { color:#666; font-size: 12px; }
+    :root { --b:#222; --fg:#111; --bd:#ddd; --muted:#666; }
+    body { font-family: system-ui, Arial, sans-serif; max-width: 980px; margin: 24px auto; padding: 0 16px; }
+    h1,h2,h3 { margin: 0 0 12px; }
+    section { border:1px solid var(--bd); border-radius:12px; padding:16px; margin-bottom:16px; background:#fff; }
+    label { display:block; font-weight:600; margin-top:10px; }
+    input, textarea, select { width:100%; padding:10px; margin-top:6px; border:1px solid var(--bd); border-radius:8px; box-sizing:border-box; }
+    textarea { min-height: 90px; }
+    .row { display:flex; gap:12px; flex-wrap: wrap; }
+    .row > div { flex:1 1 240px; }
+    .actions { margin-top: 14px; display:flex; gap:10px; flex-wrap: wrap; }
+    button { padding:10px 14px; border:1px solid var(--bd); border-radius:10px; background:#fafafa; cursor:pointer; }
+    button:hover { background:#f2f2f2; }
+    .muted { color: var(--muted); font-size: 12px; }
+    pre { background:#0d1117; color:#c9d1d9; padding:12px; border-radius:10px; overflow:auto; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; margin-left:8px; border:1px solid transparent;}
+    .grav-baixa { background:#e6f7e6; color:#146c2e; border-color:#bfe6bf; }
+    .grav-moderada { background:#fff7e6; color:#805b00; border-color:#ffe0a3; }
+    .grav-alta { background:#ffeaea; color:#a10000; border-color:#ffb3b3; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border-top:1px solid #eee; padding:8px; text-align:left; vertical-align: top; }
+    .chipbox { display:flex; flex-wrap:wrap; gap:6px; }
+    .chipbox input { flex: 1 1 220px; }
+    .chip { background:#f5f5f5; border:1px solid #e6e6e6; padding:6px 10px; border-radius:999px; font-size:12px; display:inline-flex; align-items:center; gap:6px;}
+    .chip button { border:none; background:transparent; cursor:pointer; padding:0 4px; }
+    .hint { font-size:12px; color:#777; }
+    .subtle { background:#fbfbfb; border:1px dashed #e5e5e5; border-radius:10px; padding:12px; }
   </style>
 </head>
 <body>
-  <h1>📋 Prontuário do Paciente</h1>
 
-  <label>Nome</label>
-  <input id="nome" placeholder="Ex.: Ana Souza">
+  <h1>📋 MedVibe — Prontuários com Anamnese & Exames</h1>
 
-  <div class="row">
-    <div>
-      <label>CPF</label>
-      <input id="cpf" placeholder="000.000.000-00">
+  <!-- PRONTUÁRIO -->
+  <section>
+    <h2>Prontuário do Paciente</h2>
+    <div class="row">
+      <div>
+        <label>Nome</label>
+        <input id="nome" placeholder="Ex.: Ana Souza">
+      </div>
+      <div>
+        <label>CPF</label>
+        <input id="cpf" placeholder="000.000.000-00">
+      </div>
+      <div>
+        <label>Data da consulta</label>
+        <input id="data" placeholder="YYYY-MM-DD">
+        <div class="hint">Ex.: 2025-10-21</div>
+      </div>
     </div>
-    <div>
-      <label>Data da consulta</label>
-      <input id="data" placeholder="YYYY-MM-DD">
-      <div class="hint">Ex.: 2025-10-21</div>
+
+    <label>Sintomas</label>
+    <textarea id="sintomas" placeholder="Descreva sintomas, duração, intensidade..."></textarea>
+
+    <label>Anamnese</label>
+    <textarea id="anamnese" placeholder="História da doença atual, antecedentes, hábitos, contexto..."></textarea>
+
+    <label>Exames solicitados</label>
+    <div class="chipbox" id="chips">
+      <input id="chipInput" placeholder="Digite um exame e pressione Enter (ex: Hemograma)" />
     </div>
-  </div>
 
-  <label>Sintomas</label>
-  <textarea id="sintomas" rows="3" placeholder="Descreva sintomas, duração, intensidade..."></textarea>
+    <div class="actions">
+      <button onclick="salvar()">💾 Salvar prontuário</button>
+      <button onclick="listar()">📄 Listar prontuários</button>
+      <button onclick="limpar()">🧹 Limpar</button>
+      <span class="muted">Selecionado: <span id="sel-id">—</span></span>
+    </div>
+  </section>
 
-  <div class="actions">
-    <button id="btnIa" type="button">🪄 Sugerir diagnóstico (IA)</button>
-  </div>
+  <!-- EXAMES + IA -->
+  <section>
+    <h2>
+      Exames do Prontuário —
+      <span class="muted">Paciente:</span> <strong id="exm-nome">—</strong>
+      <span class="muted">• ID</span> <span id="exm-id" class="muted">—</span>
+    </h2>
 
-  <label>Diagnóstico</label>
-  <textarea id="diag" rows="3" placeholder="Será preenchido automaticamente pela IA ou escreva manualmente."></textarea>
+    <div class="subtle">
+      <div class="row">
+        <div>
+          <label>Sintomas (resumo)</label>
+          <textarea id="preview-sintomas" readonly placeholder="Preencha os sintomas no prontuário."></textarea>
+        </div>
+        <div>
+          <label>Anamnese (resumo)</label>
+          <textarea id="preview-anamnese" readonly placeholder="Preencha a anamnese no prontuário."></textarea>
+        </div>
+      </div>
+      <div class="hint">Edite os campos no bloco “Prontuário do Paciente”.</div>
+    </div>
 
-  <div class="actions">
-    <button onclick="salvar()">💾 Salvar prontuário</button>
-    <button onclick="listar()">📄 Listar prontuários</button>
-    <button onclick="limpar()">🧹 Limpar</button>
-  </div>
+    <br/>
 
-  <h3>Saída</h3>
-  <pre id="out">Aguardando ações…</pre>
+    <div class="row">
+      <div>
+        <label>Tipo do exame</label>
+        <input id="ex_tipo" placeholder="Ex.: Hemograma, RX de tórax, PCR..." />
+      </div>
+      <div>
+        <label>Data do resultado</label>
+        <input id="ex_data" placeholder="YYYY-MM-DD" />
+      </div>
+    </div>
 
-  <script>
-    const out = document.getElementById('out');
-    const nome = document.getElementById('nome');
-    const cpf = document.getElementById('cpf');
-    const data = document.getElementById('data');
-    const sintomas = document.getElementById('sintomas');
-    const diag = document.getElementById('diag');
-    const btnIa = document.getElementById('btnIa');
+    <label>Observações</label>
+    <input id="ex_obs" placeholder="Breve observação (opcional)" />
 
-    btnIa.addEventListener('click', async () => {
-      try {
-        const body = { sintomas: sintomas.value || '' };
-        const r = await fetch('/ai-diagnostico', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(body)
-        });
-        if (!r.ok) throw new Error('Falha ao consultar IA');
-        const json = await r.json();
-        diag.value = json.sugestao || '(sem sugestão)';
-        out.textContent = 'IA sugeriu: ' + diag.value;
-      } catch (e) {
-        out.textContent = 'Erro na IA: ' + e.message;
-      }
+    <div class="row">
+      <div>
+        <label>Resultado textual</label>
+        <textarea id="ex_texto" placeholder="Cole aqui o laudo/resultado (opcional se enviar arquivo)"></textarea>
+      </div>
+      <div>
+        <label>Arquivo do exame (PDF/IMG)</label>
+        <input id="ex_arquivo" type="file" />
+        <div class="hint">Se enviar arquivo, o resultado textual pode ficar vazio.</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button onclick="salvarExameTexto()">📝 Salvar resultado textual</button>
+      <button onclick="uploadExame()">📎 Anexar arquivo</button>
+      <button onclick="carregarExames()">🔄 Atualizar lista de exames</button>
+    </div>
+
+    <h3>Exames cadastrados</h3>
+    <div id="examesLista" class="muted">— nenhum carregado —</div>
+
+    <hr style="margin:16px 0; border:none; border-top:1px solid #eee" />
+
+    <div class="actions">
+      <button id="btnIa" type="button" disabled>🪄 Sugerir diagnóstico (IA)</button>
+      <span id="gating-hint" class="muted">Preencha anamnese e adicione ao menos um exame com resultado.</span>
+    </div>
+
+    <label>Diagnóstico <span id="grav-badge" class="badge"></span></label>
+    <textarea id="diag" rows="8" placeholder="Aguardando anamnese e exames para liberar o diagnóstico..." disabled></textarea>
+  </section>
+
+  <!-- LISTAGEM -->
+  <section>
+    <h2>Prontuários</h2>
+    <div id="lista">— sem dados —</div>
+  </section>
+
+  <!-- LOG/SAÍDA -->
+  <section>
+    <h2>Saída</h2>
+    <pre id="out">Aguardando ações…</pre>
+  </section>
+
+<script>
+  // --------------- refs
+  const out = document.getElementById('out');
+  const nome = document.getElementById('nome');
+  const cpf = document.getElementById('cpf');
+  const dataC = document.getElementById('data');
+  const sintomas = document.getElementById('sintomas');
+  const anamnese = document.getElementById('anamnese');
+  const previewSint = document.getElementById('preview-sintomas');
+  const previewAnam = document.getElementById('preview-anamnese');
+
+  const diag = document.getElementById('diag');
+  const btnIa = document.getElementById('btnIa');
+  const gatingHint = document.getElementById('gating-hint');
+  const gravBadge = document.getElementById('grav-badge');
+
+  const chips = document.getElementById('chips');
+  const chipInput = document.getElementById('chipInput');
+  const lista = document.getElementById('lista');
+  const selId = document.getElementById('sel-id');
+  const exmId = document.getElementById('exm-id');
+  const exmNome = document.getElementById('exm-nome');
+
+  const exTipo = document.getElementById('ex_tipo');
+  const exData = document.getElementById('ex_data');
+  const exObs = document.getElementById('ex_obs');
+  const exTexto = document.getElementById('ex_texto');
+  const exArquivo = document.getElementById('ex_arquivo');
+
+  // --------------- estado
+  let examesSolicitados = [];
+  let prontuarioSelecionado = null;
+  let pacienteSelecionadoNome = null;
+  let hasExamResults = false;
+
+  // --------------- chips
+  function renderChips() {
+    const prevInput = chipInput;
+    chips.innerHTML = '';
+    examesSolicitados.forEach((e, i) => {
+      const div = document.createElement('div');
+      div.className = 'chip';
+      div.innerHTML = `${e} <button title="Remover" onclick="remChip(${i})">✕</button>`;
+      chips.appendChild(div);
     });
+    chips.appendChild(prevInput);
+    chipInput.value = '';
+  }
+  function remChip(i){ examesSolicitados.splice(i,1); renderChips(); }
+  chipInput.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      const v = chipInput.value.trim();
+      if (v && !examesSolicitados.includes(v)) { examesSolicitados.push(v); renderChips(); }
+      else { chipInput.value = ''; }
+    }
+  });
 
-    function validaCampos() {
-      if (!nome.value.trim() || !cpf.value.trim() || !data.value.trim()) {
-        out.textContent = 'Preencha Nome, CPF e Data.';
-        return false;
+  // --------------- previews
+  function syncPreviews(){ previewSint.value = sintomas.value; previewAnam.value = anamnese.value; }
+  sintomas.addEventListener('input', syncPreviews);
+  anamnese.addEventListener('input', () => { syncPreviews(); atualizarDisponibilidadeIA(); });
+
+  // --------------- badge gravidade
+  function setBadge(gravidade) {
+    gravBadge.className = 'badge';
+    if (!gravidade) { gravBadge.textContent = ''; return; }
+    const g = String(gravidade).toLowerCase();
+    if (g.includes('alta')) { gravBadge.classList.add('grav-alta'); gravBadge.textContent = 'gravidade: alta'; }
+    else if (g.includes('moder')) { gravBadge.classList.add('grav-moderada'); gravBadge.textContent = 'gravidade: moderada'; }
+    else if (g.includes('baixa')) { gravBadge.classList.add('grav-baixa'); gravBadge.textContent = 'gravidade: baixa'; }
+    else { gravBadge.textContent = ''; }
+  }
+
+  // --------------- format diagnóstico
+  function formatSugestaoCompleta(sug) {
+    if (!sug) return '(sem sugestão)';
+    if (typeof sug === 'string') return sug;
+    if (sug && typeof sug.texto === 'string') return sug.texto;
+
+    const hip = Array.isArray(sug.hipoteses) ? sug.hipoteses : [];
+    const grav = sug.gravidade || 'indefinida';
+    const alarmes = Array.isArray(sug.sinais_alarme) ? sug.sinais_alarme : [];
+    const jus = (sug.justificativa || '').trim();
+    const rec = (sug.recomendacao || '').trim();
+    const exames = Array.isArray(sug.exames_sugeridos) ? sug.exames_sugeridos : [];
+    const conf = typeof sug.confianca === 'number' ? sug.confianca : undefined;
+
+    let linhas = [];
+    if (hip.length) linhas.push(`Hipóteses: ${hip.join('; ')}`);
+    linhas.push(`Gravidade: ${grav}`);
+    if (alarmes.length) linhas.push(`Sinais de alarme: ${alarmes.join('; ')}`);
+    if (jus) linhas.push(`Justificativa: ${jus}`);
+    if (rec) linhas.push(`Recomendação: ${rec}`);
+    if (exames.length) linhas.push(`Exames sugeridos: ${exames.join('; ')}`);
+    if (conf !== undefined) linhas.push(`Confiança: ${conf.toFixed(2)}`);
+    return linhas.join('\n');
+  }
+
+  // --------------- IA
+  btnIa.addEventListener('click', async () => {
+    btnIa.disabled = true;
+    btnIa.textContent = 'Consultando IA...';
+    try {
+      const payload = {
+        sintomas: sintomas.value || '',
+        anamnese: anamnese.value || ''
+      };
+      if (prontuarioSelecionado) payload.prontuario_id = prontuarioSelecionado;
+
+      const r = await fetch('/ai-diagnostico', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+
+      const text = await r.text();
+      let data;
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+
+      if (!r.ok) {
+        const msg = data.detail || data.error || `${r.status} ${r.statusText}` || 'Falha ao consultar IA';
+        out.textContent = `Erro na IA: ${msg}`;
+        return;
       }
-      return true;
-    }
 
-    async function salvar() {
-      try {
-        if (!validaCampos()) return;
-        const body = {
-          nome: nome.value,
-          cpf: cpf.value,
-          data_consulta: data.value,
-          diagnostico: diag.value
-        };
-        const r = await fetch('/prontuario', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(body)
-        });
-        const text = await r.text();
-        out.textContent = text;
-      } catch (e) {
-        out.textContent = 'Erro ao salvar: ' + e.message;
+      const sug = data.sugestao;
+      diag.value = formatSugestaoCompleta(sug);
+      setBadge(sug?.gravidade);
+      out.textContent = JSON.stringify(sug, null, 2);
+    } catch (e) {
+      out.textContent = 'Erro na IA: ' + e.message;
+    } finally {
+      btnIa.textContent = '🪄 Sugerir diagnóstico (IA)';
+      atualizarDisponibilidadeIA();
+    }
+  });
+
+  // --------------- CRUD prontuário
+  function validaCampos() {
+    if (!nome.value.trim() || !cpf.value.trim() || !dataC.value.trim()) {
+      out.textContent = 'Preencha Nome, CPF e Data.'; return false;
+    }
+    return true;
+  }
+
+  async function salvar() {
+    try {
+      if (!validaCampos()) return;
+
+      // IMPORTANTE: backend exige "diagnostico" -> usamos "Em avaliação" se vazio
+      const diagnosticoFinal = (diag.value || '').trim() || 'Em avaliação';
+
+      const body = {
+        nome: nome.value,
+        cpf: cpf.value,
+        data_consulta: dataC.value,
+        diagnostico: diagnosticoFinal,
+        anamnese: anamnese.value || '',
+        exames_solicitados: examesSolicitados
+      };
+
+      const r = await fetch('/prontuario', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+      const txt = await r.text();
+      out.textContent = txt;
+      listar();
+      try { const j = JSON.parse(txt); if (j.id) selecionarProntuario(j.id, body.nome); } catch {}
+    } catch (e) { out.textContent = 'Erro ao salvar: ' + e.message; }
+  }
+
+  async function listar() {
+    try {
+      const r = await fetch('/prontuarios');
+      const arr = await r.json();
+      if (!Array.isArray(arr) || arr.length === 0) { lista.innerHTML = '— sem dados —'; return; }
+      const rows = arr.map(p => `
+        <tr>
+          <td>${p.id}</td>
+          <td><strong>${escapeHtml(p.nome)}</strong><br><span class="muted">${escapeHtml(p.cpf)}</span></td>
+          <td>${escapeHtml(p.data_consulta)}</td>
+          <td><pre style="white-space:pre-wrap;max-width:420px">${escapeHtml(p.diagnostico || '')}</pre></td>
+          <td>
+            <div class="muted">${(p.exames_solicitados||[]).map(escapeHtml).join(', ')}</div>
+            <button onclick="selecionarProntuario(${p.id}, '${escapeAttr(p.nome)}')">Selecionar</button>
+          </td>
+        </tr>`).join('');
+      lista.innerHTML = `
+        <table>
+          <thead><tr><th>ID</th><th>Paciente</th><th>Data</th><th>Diagnóstico</th><th>Ações</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    } catch (e) { lista.innerHTML = 'Erro ao listar: ' + escapeHtml(e.message); }
+  }
+
+  function selecionarProntuario(id, nomePaciente='') {
+    prontuarioSelecionado = Number(id);
+    pacienteSelecionadoNome = nomePaciente || pacienteSelecionadoNome;
+    selId.textContent = String(prontuarioSelecionado);
+    exmId.textContent = String(prontuarioSelecionado);
+    exmNome.textContent = pacienteSelecionadoNome || '—';
+    syncPreviews();
+    carregarExames();
+    setTimeout(atualizarDisponibilidadeIA, 300);
+  }
+
+  function limpar() {
+    nome.value = '';
+    cpf.value = '';
+    dataC.value = '';
+    sintomas.value = '';
+    anamnese.value = '';
+    diag.value = '';
+    examesSolicitados = [];
+    renderChips();
+    setBadge('');
+    syncPreviews();
+    out.textContent = 'Formulário limpo.';
+    atualizarDisponibilidadeIA();
+  }
+
+  // --------------- Exames
+  async function carregarExames() {
+    hasExamResults = false;
+    if (!prontuarioSelecionado) {
+      document.getElementById('examesLista').textContent = '— selecione um prontuário —';
+      atualizarDisponibilidadeIA(); return;
+    }
+    try {
+      const r = await fetch(`/exames?prontuario_id=${prontuarioSelecionado}`);
+      const arr = await r.json();
+
+      if (Array.isArray(arr)) {
+        hasExamResults = arr.some(e =>
+          (e.arquivo_path && e.arquivo_path.trim() !== '') ||
+          (e.resultado_texto && e.resultado_texto.trim() !== '')
+        );
       }
-    }
 
-    async function listar() {
-      try {
-        const r = await fetch('/prontuarios');
-        const json = await r.json();
-        out.textContent = JSON.stringify(json, null, 2);
-      } catch (e) {
-        out.textContent = 'Erro ao listar: ' + e.message;
+      if (!Array.isArray(arr) || arr.length === 0) {
+        document.getElementById('examesLista').textContent = '— nenhum exame —';
+        atualizarDisponibilidadeIA(); return;
       }
+      const rows = arr.map(e => {
+        const file = e.arquivo_path ? `<a href="${e.arquivo_path}" target="_blank">arquivo</a>` : '';
+        const resTxt = e.resultado_texto ? `<pre style="white-space:pre-wrap">${escapeHtml(e.resultado_texto)}</pre>` : '';
+        return `<tr>
+          <td>${e.id}</td>
+          <td><strong>${escapeHtml(e.tipo || '')}</strong><br><span class="muted">${escapeHtml(e.data_resultado || '')}</span></td>
+          <td>${escapeHtml(e.observacoes || '')}</td>
+          <td>${file || '-'}</td>
+          <td>${resTxt || '-'}</td>
+        </tr>`;
+      }).join('');
+      document.getElementById('examesLista').innerHTML = `
+        <table>
+          <thead><tr><th>ID</th><th>Exame/Data</th><th>Obs</th><th>Arquivo</th><th>Resultado</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+      atualizarDisponibilidadeIA();
+    } catch (e) {
+      document.getElementById('examesLista').textContent = 'Erro ao carregar exames: ' + e.message;
+      atualizarDisponibilidadeIA();
     }
+  }
 
-    function limpar() {
-      nome.value = '';
-      cpf.value = '';
-      data.value = '';
-      sintomas.value = '';
-      diag.value = '';
-      out.textContent = 'Formulário limpo.';
+  async function salvarExameTexto() {
+    if (!prontuarioSelecionado) { out.textContent = 'Selecione um prontuário.'; return; }
+    try {
+      const r = await fetch('/exames/texto', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          prontuario_id: prontuarioSelecionado,
+          tipo: exTipo.value || '',
+          observacoes: exObs.value || '',
+          resultado_texto: exTexto.value || '',
+          data_resultado: exData.value || ''
+        })
+      });
+      const t = await r.text();
+      out.textContent = t;
+      carregarExames();
+      exTexto.value = '';
+    } catch (e) { out.textContent = 'Erro ao salvar resultado: ' + e.message; }
+  }
+
+  async function uploadExame() {
+    if (!prontuarioSelecionado) { out.textContent = 'Selecione um prontuário.'; return; }
+    if (!exArquivo.files || exArquivo.files.length === 0) { out.textContent = 'Escolha um arquivo.'; return; }
+    try {
+      const fd = new FormData();
+      fd.append('prontuario_id', prontuarioSelecionado);
+      fd.append('tipo', exTipo.value || '');
+      fd.append('observacoes', exObs.value || '');
+      fd.append('data_resultado', exData.value || '');
+      fd.append('arquivo', exArquivo.files[0]);
+
+      const r = await fetch('/exames/upload', { method:'POST', body: fd });
+      const t = await r.text();
+      out.textContent = t;
+      exArquivo.value = '';
+      carregarExames();
+    } catch (e) { out.textContent = 'Erro no upload: ' + e.message; }
+  }
+
+  // --------------- Gating IA
+  function atualizarDisponibilidadeIA() {
+    const anamnesePreenchida = anamnese.value.trim().length > 20;
+    const podeUsarIA = anamnesePreenchida && hasExamResults;
+
+    btnIa.disabled = !podeUsarIA;
+    diag.disabled = !podeUsarIA;
+
+    if (!podeUsarIA) {
+      gatingHint.textContent = 'Preencha anamnese e adicione ao menos um exame com resultado (arquivo ou texto).';
+      diag.placeholder = 'Aguardando anamnese e exames para liberar o diagnóstico...';
+    } else {
+      gatingHint.textContent = '';
+      diag.placeholder = 'Será preenchido pela IA ou manualmente.';
     }
-  </script>
+  }
+  const examesObserver = new MutationObserver(atualizarDisponibilidadeIA);
+  examesObserver.observe(document.getElementById('examesLista'), { childList: true, subtree: true });
+
+  // --------------- utils
+  function escapeHtml(s='') {
+    return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+                    .replaceAll('"','&quot;').replaceAll("'","&#039;");
+  }
+  function escapeAttr(s='') { return String(s).replaceAll('\\','\\\\').replaceAll("'", "\\'"); }
+
+  // boot
+  renderChips();
+  listar();
+  syncPreviews();
+  atualizarDisponibilidadeIA();
+</script>
 </body>
 </html>
-EOF
