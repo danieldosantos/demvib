@@ -48,7 +48,7 @@
     }
 
     .app-shell {
-      max-width: 1200px;
+      max-width: 1440px;
       margin: 0 auto;
       padding: 48px 32px 64px;
     }
@@ -104,11 +104,26 @@
       letter-spacing: 0.12em;
     }
 
-    .layout-grid {
+    .dashboard-grid {
       display: grid;
       gap: 28px;
       margin-top: 32px;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "prontuario"
+        "exames"
+        "listagem"
+        "logs";
     }
+
+    .dashboard-grid > .card {
+      min-width: 0;
+    }
+
+    .card--prontuario { grid-area: prontuario; }
+    .card--exames { grid-area: exames; }
+    .card--listagem { grid-area: listagem; }
+    .card--logs { grid-area: logs; }
 
     .card {
       background: var(--surface);
@@ -195,7 +210,7 @@
     .section-body {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
     }
 
     .row {
@@ -681,17 +696,28 @@
       color: var(--muted);
     }
 
-    @media (min-width: 1100px) {
-      .layout-grid.primary {
-        grid-template-columns: 1.2fr 1fr;
+    @media (min-width: 1200px) {
+      .dashboard-grid {
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+        grid-template-areas:
+          "prontuario listagem"
+          "exames logs";
+        align-items: start;
       }
 
-      .layout-grid.secondary {
-        grid-template-columns: repeat(2, 1fr);
+      .card--listagem,
+      .card--logs {
+        align-self: start;
       }
 
       .exam-card-grid {
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      }
+    }
+
+    @media (min-width: 1600px) {
+      .dashboard-grid {
+        grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr);
       }
     }
 
@@ -740,7 +766,7 @@
       <span class="status-pill">Ambiente clínico seguro</span>
     </header>
 
-    <div class="layout-grid primary">
+    <div class="dashboard-grid">
       <section class="card card--prontuario">
         <div class="section-header">
           <div>
@@ -853,9 +879,7 @@
           </div>
         </div>
       </section>
-    </div>
 
-    <div class="layout-grid secondary">
       <section class="card card--listagem">
         <div class="section-header">
           <div>
