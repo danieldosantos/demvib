@@ -1333,7 +1333,7 @@
     if (sug && typeof sug.texto === 'string') return sug.texto;
 
     const hip = Array.isArray(sug.hipoteses) ? sug.hipoteses : [];
-    const grav = sug.gravidade || 'indefinida';
+    const grav = (sug.gravidade || 'indefinida').toString();
     const alarmes = Array.isArray(sug.sinais_alarme) ? sug.sinais_alarme : [];
     const jus = (sug.justificativa || '').trim();
     const rec = (sug.recomendacao || '').trim();
@@ -1346,30 +1346,65 @@
       ? sug.fundamento_compartilhamento_dados.trim()
       : '';
 
-    let linhas = [];
-    if (hip.length) linhas.push(`Hipóteses: ${hip.join('; ')}`);
-    linhas.push(`Gravidade: ${grav}`);
-    if (alarmes.length) linhas.push(`Sinais de alarme: ${alarmes.join('; ')}`);
-    if (jus) linhas.push(`Justificativa: ${jus}`);
-    if (rec) linhas.push(`Recomendação: ${rec}`);
-    if (exames.length) linhas.push(`Exames sugeridos: ${exames.join('; ')}`);
-    if (conf !== undefined) linhas.push(`Confiança: ${conf.toFixed(2)}`);
+    const paragrafos = [];
+
+    if (hip.length) {
+      const listaHip = hip.map(h => `• ${h}`).join('\n');
+      paragrafos.push(`Hipóteses diagnósticas consideradas:\n${listaHip}`);
+    }
+
+    if (grav) {
+      paragrafos.push(`Gravidade estimada do quadro: ${grav}.`);
+    }
+
+    if (alarmes.length) {
+      const listaAlarmes = alarmes.map(a => `• ${a}`).join('\n');
+      paragrafos.push(`Sinais de alarme observados:\n${listaAlarmes}`);
+    }
+
+    if (jus) {
+      paragrafos.push(`Justificativa clínica: ${jus}`);
+    }
+
+    if (rec) {
+      paragrafos.push(`Recomendações iniciais: ${rec}`);
+    }
+
+    if (exames.length) {
+      const listaExames = exames.map(e => `• ${e}`).join('\n');
+      paragrafos.push(`Exames sugeridos para investigação complementar:\n${listaExames}`);
+    }
+
+    if (conf !== undefined) {
+      paragrafos.push(`Grau de confiança da sugestão: ${(Math.max(0, Math.min(conf, 1)) * 100).toFixed(1)}%.`);
+    }
+
     if (diretrizes) {
       const labels = {
-        sintomas: 'Diretrizes (sintomas)',
-        anamnese: 'Diretrizes (anamnese)',
-        exames_resultados: 'Diretrizes (resultados de exames)',
-        exames_anexos: 'Diretrizes (anexos de exames)'
+        sintomas: 'Diretrizes consultadas (sintomas)',
+        anamnese: 'Diretrizes consultadas (anamnese)',
+        exames_resultados: 'Diretrizes consultadas (resultados de exames)',
+        exames_anexos: 'Diretrizes consultadas (anexos de exames)'
       };
       Object.entries(labels).forEach(([key, label]) => {
         if (key in diretrizes) {
           const valor = String(diretrizes[key] ?? '').trim();
-          if (valor) linhas.push(`${label}: ${valor}`);
+          if (valor) {
+            paragrafos.push(`${label}: ${valor}`);
+          }
         }
       });
     }
-    if (fundamentoDados) linhas.push(`Base legal para uso dos dados: ${fundamentoDados}`);
-    return linhas.join('\n');
+
+    if (fundamentoDados) {
+      paragrafos.push(`Base legal que autoriza o tratamento dos dados: ${fundamentoDados}`);
+    }
+
+    if (!paragrafos.length) {
+      return '(sem detalhes adicionais)';
+    }
+
+    return paragrafos.join('\n\n');
   }
 
   // --------------- IA
