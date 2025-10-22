@@ -65,6 +65,10 @@ db.run(`
 const OLLAMA_HOST  = process.env.OLLAMA_HOST  || 'http://127.0.0.1:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'deepseek-r1:8b';
 const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY || '';
+const OLLAMA_TEMPERATURE = (() => {
+  const value = Number(process.env.OLLAMA_TEMPERATURE);
+  return Number.isFinite(value) ? value : 0;
+})();
 
 // ------------------- Upload (multer) -------------------
 const storage = multer.diskStorage({
@@ -119,7 +123,7 @@ async function askOllama(prompt) {
       prompt,
       stream: false,
       format: 'json',             // força resposta JSON
-      options: { temperature: 0.6 }
+      options: { temperature: OLLAMA_TEMPERATURE }
     })
   });
 
