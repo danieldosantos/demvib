@@ -584,12 +584,14 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       background: var(--surface-alt);
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
+      min-width: 720px;
     }
 
     thead th {
@@ -642,8 +644,8 @@
       border-radius: 10px;
       border: 1px solid var(--border);
       padding: 12px;
-      max-height: 200px;
-      overflow: auto;
+      max-height: none;
+      overflow: visible;
       white-space: pre-wrap;
     }
 
@@ -735,6 +737,59 @@
       .actions.actions--inline {
         flex-direction: column;
         align-items: flex-start;
+      }
+
+      .data-surface {
+        overflow: visible;
+      }
+
+      .data-surface table,
+      .data-surface tbody,
+      .data-surface tr,
+      .data-surface td,
+      .data-surface th {
+        display: block;
+        width: 100%;
+      }
+
+      .data-surface table {
+        min-width: 0;
+      }
+
+      .data-surface thead {
+        display: none;
+      }
+
+      .data-surface tbody tr {
+        background: #fff;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        padding: 18px;
+        margin-bottom: 16px;
+      }
+
+      .data-surface tbody td {
+        border: 0;
+        padding: 0;
+      }
+
+      .data-surface tbody td + td {
+        margin-top: 12px;
+      }
+
+      .data-surface tbody td:last-child {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .data-surface tbody td:last-child .records-exams {
+        margin-bottom: 0;
+      }
+
+      .data-surface tbody td:last-child .btn {
+        width: 100%;
+        justify-content: center;
       }
     }
 
@@ -1287,6 +1342,9 @@
     const diretrizes = (sug && typeof sug.diretrizes_utilizadas === 'object' && !Array.isArray(sug.diretrizes_utilizadas))
       ? sug.diretrizes_utilizadas
       : null;
+    const fundamentoDados = typeof sug.fundamento_compartilhamento_dados === 'string'
+      ? sug.fundamento_compartilhamento_dados.trim()
+      : '';
 
     let linhas = [];
     if (hip.length) linhas.push(`Hipóteses: ${hip.join('; ')}`);
@@ -1310,6 +1368,7 @@
         }
       });
     }
+    if (fundamentoDados) linhas.push(`Base legal para uso dos dados: ${fundamentoDados}`);
     return linhas.join('\n');
   }
 
