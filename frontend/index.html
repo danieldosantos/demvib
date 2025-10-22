@@ -1284,6 +1284,9 @@
     const rec = (sug.recomendacao || '').trim();
     const exames = Array.isArray(sug.exames_sugeridos) ? sug.exames_sugeridos : [];
     const conf = typeof sug.confianca === 'number' ? sug.confianca : undefined;
+    const diretrizes = (sug && typeof sug.diretrizes_utilizadas === 'object' && !Array.isArray(sug.diretrizes_utilizadas))
+      ? sug.diretrizes_utilizadas
+      : null;
 
     let linhas = [];
     if (hip.length) linhas.push(`Hipóteses: ${hip.join('; ')}`);
@@ -1293,6 +1296,20 @@
     if (rec) linhas.push(`Recomendação: ${rec}`);
     if (exames.length) linhas.push(`Exames sugeridos: ${exames.join('; ')}`);
     if (conf !== undefined) linhas.push(`Confiança: ${conf.toFixed(2)}`);
+    if (diretrizes) {
+      const labels = {
+        sintomas: 'Diretrizes (sintomas)',
+        anamnese: 'Diretrizes (anamnese)',
+        exames_resultados: 'Diretrizes (resultados de exames)',
+        exames_anexos: 'Diretrizes (anexos de exames)'
+      };
+      Object.entries(labels).forEach(([key, label]) => {
+        if (key in diretrizes) {
+          const valor = String(diretrizes[key] ?? '').trim();
+          if (valor) linhas.push(`${label}: ${valor}`);
+        }
+      });
+    }
     return linhas.join('\n');
   }
 
