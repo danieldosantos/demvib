@@ -3,147 +3,924 @@
 <head>
   <meta charset="utf-8" />
   <title>MedVibe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --b:#222; --fg:#111; --bd:#ddd; --muted:#666; }
-    body { font-family: system-ui, Arial, sans-serif; max-width: 980px; margin: 24px auto; padding: 0 16px; }
-    h1,h2,h3 { margin: 0 0 12px; }
-    section { border:1px solid var(--bd); border-radius:12px; padding:16px; margin-bottom:16px; background:#fff; }
-    label { display:block; font-weight:600; margin-top:10px; }
-    input, textarea, select { width:100%; padding:10px; margin-top:6px; border:1px solid var(--bd); border-radius:8px; box-sizing:border-box; }
-    textarea { min-height: 90px; }
-    .row { display:flex; gap:12px; flex-wrap: wrap; }
-    .row > div { flex:1 1 240px; }
-    .actions { margin-top: 14px; display:flex; gap:10px; flex-wrap: wrap; }
-    button { padding:10px 14px; border:1px solid var(--bd); border-radius:10px; background:#fafafa; cursor:pointer; }
-    button:hover { background:#f2f2f2; }
-    .muted { color: var(--muted); font-size: 12px; }
-    pre { background:#0d1117; color:#c9d1d9; padding:12px; border-radius:10px; overflow:auto; }
-    .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; margin-left:8px; border:1px solid transparent;}
-    .grav-baixa { background:#e6f7e6; color:#146c2e; border-color:#bfe6bf; }
-    .grav-moderada { background:#fff7e6; color:#805b00; border-color:#ffe0a3; }
-    .grav-alta { background:#ffeaea; color:#a10000; border-color:#ffb3b3; }
-    table { width:100%; border-collapse: collapse; }
-    th, td { border-top:1px solid #eee; padding:8px; text-align:left; vertical-align: top; }
-    .chipbox { display:flex; flex-wrap:wrap; gap:6px; }
-    .chipbox input { flex: 1 1 220px; }
-    .chip { background:#f5f5f5; border:1px solid #e6e6e6; padding:6px 10px; border-radius:999px; font-size:12px; display:inline-flex; align-items:center; gap:6px;}
-    .chip button { border:none; background:transparent; cursor:pointer; padding:0 4px; }
-    .hint { font-size:12px; color:#777; }
-    .subtle { background:#fbfbfb; border:1px dashed #e5e5e5; border-radius:10px; padding:12px; }
-    .exam-card-grid { display:flex; flex-direction:column; gap:12px; }
-    .exam-card { border:1px solid #e6e6e6; border-radius:12px; padding:14px; background:#fafafa; }
-    .exam-card h4 { margin:0 0 8px; font-size:16px; }
-    .exam-card label { margin-top:10px; font-size:13px; text-transform:none; }
-    .exam-card textarea { min-height:90px; }
-    .exam-actions { margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
-    .exam-results-list { margin-top:12px; border:1px dashed #d7d7d7; border-radius:10px; padding:10px; background:#fff; }
-    .exam-result-item { font-size:13px; margin-bottom:8px; }
-    .exam-result-item:last-child { margin-bottom:0; }
-    .exam-result-item pre { margin:6px 0 0; padding:8px; background:#0d1117; color:#c9d1d9; border-radius:8px; white-space:pre-wrap; }
+    :root {
+      --primary: #1666c4;
+      --primary-dark: #114f96;
+      --surface: #ffffff;
+      --surface-alt: #f4f7fb;
+      --surface-soft: #eef3fb;
+      --border: #d8e3f3;
+      --bg: #e8eff8;
+      --fg: #0f1c2e;
+      --muted: #627089;
+      --danger: #d6455d;
+      --warning: #f4a62a;
+      --success: #3aa76d;
+      --accent: #0fb8ad;
+      --shadow: 0 18px 42px -24px rgba(13, 56, 104, 0.45);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(180deg, #f1f5fd 0%, #e8eff8 100%);
+      color: var(--fg);
+      line-height: 1.6;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .app-shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 48px 32px 64px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 32px;
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(12px);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: var(--shadow);
+    }
+
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .page-title svg {
+      width: 48px;
+      height: 48px;
+      color: var(--primary);
+    }
+
+    .page-title h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .page-title p {
+      margin: 6px 0 0;
+      font-size: 15px;
+      color: var(--muted);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(22, 102, 196, 0.12);
+      color: var(--primary-dark);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .layout-grid {
+      display: grid;
+      gap: 28px;
+      margin-top: 32px;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      box-shadow: 0 14px 34px -24px rgba(15, 28, 46, 0.55);
+    }
+
+    .card--logs {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .section-subtitle {
+      margin-top: 6px;
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+    }
+
+    .section-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .info-banner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 16px 20px;
+      border-radius: var(--radius-md);
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .info-chip {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 160px;
+    }
+
+    .info-chip.compact {
+      min-width: auto;
+    }
+
+    .info-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .info-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    .section-body {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 14px;
+      color: var(--fg);
+      box-shadow: inset 0 1px 2px rgba(15, 28, 46, 0.08);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(22, 102, 196, 0.15);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .actions.actions--inline {
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      padding: 10px 18px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--surface-alt);
+      color: var(--fg);
+      transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px -20px rgba(15, 28, 46, 0.65);
+    }
+
+    .btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(22, 102, 196, 0.25);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background: var(--surface-alt);
+      border-color: var(--border);
+      color: var(--primary-dark);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--primary-dark);
+    }
+
+    .btn-danger {
+      background: rgba(214, 69, 93, 0.12);
+      color: var(--danger);
+      border-color: rgba(214, 69, 93, 0.45);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border-color: transparent;
+      color: var(--muted);
+    }
+
+    .btn-link {
+      background: transparent;
+      border-color: transparent;
+      color: var(--primary-dark);
+      padding: 6px 0;
+      font-weight: 600;
+    }
+
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 13px;
+      border-radius: 10px;
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .btn-sm svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn.is-loading {
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-top-color: #fff;
+      animation: spin 1s linear infinite;
+    }
+
+    .btn:not(.btn-primary) .spinner {
+      border-color: rgba(22, 102, 196, 0.3);
+      border-top-color: var(--primary);
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .chipbox {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      background: var(--surface-alt);
+      border: 1px dashed var(--border);
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: #fff;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .chip-remove {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--muted);
+    }
+
+    .chip-remove:hover {
+      color: var(--danger);
+    }
+
+    .chipbox input {
+      flex: 1 1 260px;
+      min-width: 200px;
+      border: none;
+      background: transparent;
+      padding: 4px 0;
+      box-shadow: none;
+    }
+
+    .chipbox input:focus {
+      border: none;
+      box-shadow: none;
+      outline: none;
+    }
+
+    .preview-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+      padding: 18px;
+      background: var(--surface-alt);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .preview-panel textarea {
+      min-height: 120px;
+      background: #fff;
+    }
+
+    .exam-card-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .exam-card {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--surface-alt);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      padding: 18px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .exam-card h4 {
+      margin: 0;
+      font-size: 18px;
+      color: var(--primary-dark);
+    }
+
+    .exam-card textarea {
+      min-height: 100px;
+    }
+
+    .exam-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .exam-results-list {
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      background: #fff;
+    }
+
+    .exam-result-item {
+      font-size: 13px;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(15, 28, 46, 0.08);
+    }
+
+    .exam-result-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .exam-result-item pre {
+      margin-top: 8px;
+      background: #0d1117;
+      color: #c9d1d9;
+      border-radius: 10px;
+      padding: 10px;
+      white-space: pre-wrap;
+    }
+
+    .ia-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+    }
+
+    .ia-panel p {
+      margin: 0;
+      flex: 1 1 200px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .diagnostico-area {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      background: var(--surface-alt);
+      border: 1px solid transparent;
+      color: var(--muted);
+    }
+
+    .grav-baixa {
+      background: rgba(58, 167, 109, 0.12);
+      color: var(--success);
+      border-color: rgba(58, 167, 109, 0.4);
+    }
+
+    .grav-moderada {
+      background: rgba(244, 166, 42, 0.12);
+      color: var(--warning);
+      border-color: rgba(244, 166, 42, 0.45);
+    }
+
+    .grav-alta {
+      background: rgba(214, 69, 93, 0.12);
+      color: var(--danger);
+      border-color: rgba(214, 69, 93, 0.45);
+    }
+
+    .data-surface {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-alt);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 14px 18px;
+      background: #fff;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody td {
+      padding: 16px 18px;
+      border-top: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .record-id {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(22, 102, 196, 0.1);
+      color: var(--primary-dark);
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .record-name {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .record-cpf {
+      margin-top: 4px;
+      font-size: 13px;
+    }
+
+    .record-date {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--primary-dark);
+    }
+
+    .diagnostico-resumo {
+      font-size: 13px;
+      line-height: 1.5;
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 12px;
+      max-height: 200px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+
+    .records-exams {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .table-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 184, 173, 0.12);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .empty-state {
+      padding: 36px;
+      text-align: center;
+    }
+
+    .log-surface {
+      flex: 1;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(15, 22, 41, 0.6);
+      background: #0f172a;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+    }
+
+    pre {
+      margin: 0;
+      padding: 20px;
+      color: #c9d1d9;
+      font-size: 13px;
+      line-height: 1.6;
+      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      white-space: pre-wrap;
+    }
+
+    #examesLista {
+      display: inline-flex;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    @media (min-width: 1100px) {
+      .layout-grid.primary {
+        grid-template-columns: 1.2fr 1fr;
+      }
+
+      .layout-grid.secondary {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .exam-card-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      }
+    }
+
+    @media (max-width: 880px) {
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .actions.actions--inline {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .app-shell {
+        padding: 32px 16px 48px;
+      }
+
+      .card {
+        padding: 24px;
+      }
+    }
   </style>
 </head>
 <body>
-
-  <h1>📋 MedVibe — Prontuários com Anamnese & Exames</h1>
-
-  <!-- PRONTUÁRIO -->
-  <section>
-    <h2>Prontuário do Paciente</h2>
-    <div class="row">
-      <div>
-        <label>Nome</label>
-        <input id="nome" placeholder="Ex.: Ana Souza">
-      </div>
-      <div>
-        <label>CPF</label>
-        <input id="cpf" placeholder="000.000.000-00">
-      </div>
-      <div>
-        <label>Data da consulta</label>
-        <input id="data" placeholder="YYYY-MM-DD">
-        <div class="hint">Ex.: 2025-10-21</div>
-      </div>
-    </div>
-
-    <label>Sintomas</label>
-    <textarea id="sintomas" placeholder="Descreva sintomas, duração, intensidade..."></textarea>
-
-    <label>Anamnese</label>
-    <textarea id="anamnese" placeholder="História da doença atual, antecedentes, hábitos, contexto..."></textarea>
-
-    <label>Exames solicitados</label>
-    <div class="chipbox" id="chips">
-      <input id="chipInput" placeholder="Digite um exame e pressione Enter (ex: Hemograma)" />
-    </div>
-
-    <div class="actions">
-      <button id="btnSalvar" onclick="salvar()">💾 Salvar prontuário</button>
-      <button onclick="listar()">📄 Listar prontuários</button>
-      <button id="btnExcluir" onclick="excluir()" disabled>🗑️ Excluir prontuário</button>
-      <button onclick="limpar()">🧹 Limpar</button>
-      <span class="muted">Selecionado: <span id="sel-id">—</span></span>
-    </div>
-  </section>
-
-  <!-- EXAMES + IA -->
-  <section>
-    <h2>
-      Exames do Prontuário —
-      <span class="muted">Paciente:</span> <strong id="exm-nome">—</strong>
-      <span class="muted">• ID</span> <span id="exm-id" class="muted">—</span>
-    </h2>
-
-    <div class="subtle">
-      <div class="row">
+  <main class="app-shell">
+    <header class="page-header">
+      <div class="page-title">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="4" y="6" width="40" height="36" rx="10" ry="10" stroke="currentColor" stroke-width="3" fill="rgba(22, 102, 196, 0.08)" />
+          <path d="M16 24h16" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+          <path d="M24 16v16" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+        </svg>
         <div>
-          <label>Sintomas (resumo)</label>
-          <textarea id="preview-sintomas" readonly placeholder="Preencha os sintomas no prontuário."></textarea>
-        </div>
-        <div>
-          <label>Anamnese (resumo)</label>
-          <textarea id="preview-anamnese" readonly placeholder="Preencha a anamnese no prontuário."></textarea>
+          <h1>MedVibe Prontuário Clínico</h1>
+          <p>Registro estruturado de anamnese, exames e diagnósticos assistidos por IA.</p>
         </div>
       </div>
-      <div class="hint">Edite os campos no bloco “Prontuário do Paciente”.</div>
+      <span class="status-pill">Ambiente clínico seguro</span>
+    </header>
+
+    <div class="layout-grid primary">
+      <section class="card card--prontuario">
+        <div class="section-header">
+          <div>
+            <h2>Prontuário do Paciente</h2>
+            <span class="section-subtitle">Dados essenciais do atendimento</span>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="info-banner">
+            <div class="info-chip">
+              <span class="info-label">Prontuário selecionado</span>
+              <span class="info-value" id="sel-id">—</span>
+            </div>
+            <div class="info-chip">
+              <span class="info-label">Paciente</span>
+              <span class="info-value" id="sel-nome">Em preenchimento</span>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="nome">Nome</label>
+              <input id="nome" placeholder="Ex.: Ana Souza" />
+            </div>
+            <div class="field">
+              <label for="cpf">CPF</label>
+              <input id="cpf" placeholder="000.000.000-00" />
+            </div>
+            <div class="field">
+              <label for="data">Data da consulta</label>
+              <input id="data" placeholder="YYYY-MM-DD" />
+              <span class="hint">Formato recomendado: 2025-10-21</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="sintomas">Sintomas</label>
+            <textarea id="sintomas" placeholder="Descreva sintomas, duração, intensidade..."></textarea>
+          </div>
+
+          <div class="field">
+            <label for="anamnese">Anamnese</label>
+            <textarea id="anamnese" placeholder="História da doença atual, antecedentes, hábitos, contexto..."></textarea>
+          </div>
+
+          <div class="field">
+            <label for="chipInput">Exames solicitados</label>
+            <div class="chipbox" id="chips">
+              <input id="chipInput" class="chip-input" placeholder="Digite um exame e pressione Enter (ex.: Hemograma)" />
+            </div>
+            <span class="hint">Organize os exames esperados para habilitar a área de anexos e resultados.</span>
+          </div>
+
+          <div class="actions">
+            <button id="btnSalvar" class="btn btn-primary" type="button" onclick="salvar()"></button>
+            <button id="btnLimpar" class="btn btn-ghost" type="button" onclick="limpar()"></button>
+            <button id="btnExcluir" class="btn btn-danger" type="button" onclick="excluir()" disabled></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card card--exames">
+        <div class="section-header">
+          <div>
+            <h2>Exames e Documentos</h2>
+            <span class="section-subtitle">Gerencie anexos e resultados vinculados ao atendimento</span>
+          </div>
+          <div class="section-meta">
+            <div class="info-chip compact">
+              <span class="info-label">Paciente</span>
+              <span class="info-value" id="exm-nome">—</span>
+            </div>
+            <div class="info-chip compact">
+              <span class="info-label">ID</span>
+              <span class="info-value" id="exm-id">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="preview-panel">
+            <div class="field">
+              <label for="preview-sintomas">Sintomas (resumo)</label>
+              <textarea id="preview-sintomas" readonly placeholder="Preencha os sintomas no prontuário."></textarea>
+            </div>
+            <div class="field">
+              <label for="preview-anamnese">Anamnese (resumo)</label>
+              <textarea id="preview-anamnese" readonly placeholder="Preencha a anamnese no prontuário."></textarea>
+            </div>
+          </div>
+          <span class="hint">Edite os campos no bloco “Prontuário do Paciente” para atualizar os resumos.</span>
+
+          <h3 class="section-subtitle" style="margin-top: 4px;">Resultados e anexos dos exames</h3>
+          <div id="examesSolicitadosCards" class="exam-card-grid">
+            <div class="empty-state muted">Adicione exames solicitados no prontuário para gerenciar resultados por aqui.</div>
+          </div>
+
+          <div class="actions actions--inline">
+            <button id="btnAtualizarExames" class="btn btn-outline" type="button" onclick="carregarExames()"></button>
+            <span id="examesLista" class="muted">— selecione um prontuário —</span>
+          </div>
+
+          <div class="ia-panel">
+            <button id="btnIa" class="btn btn-secondary" type="button" disabled></button>
+            <p id="gating-hint">Preencha anamnese e adicione ao menos um exame com resultado.</p>
+          </div>
+
+          <div class="diagnostico-area">
+            <label for="diag">Diagnóstico <span id="grav-badge" class="badge"></span></label>
+            <textarea id="diag" rows="8" placeholder="Aguardando anamnese e exames para liberar o diagnóstico..." disabled></textarea>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <br/>
+    <div class="layout-grid secondary">
+      <section class="card card--listagem">
+        <div class="section-header">
+          <div>
+            <h2>Prontuários cadastrados</h2>
+            <span class="section-subtitle">Consulte evoluções anteriores e retome atendimentos</span>
+          </div>
+          <div class="section-meta">
+            <button id="btnListar" class="btn btn-outline" type="button" onclick="listar()"></button>
+          </div>
+        </div>
+        <div class="data-surface" id="lista">
+          <div class="empty-state muted">Nenhum prontuário cadastrado até o momento.</div>
+        </div>
+      </section>
 
-    <h3>Resultados e anexos dos exames solicitados</h3>
-    <div id="examesSolicitadosCards" class="exam-card-grid">
-      <div class="muted">Adicione exames solicitados no prontuário para gerenciar resultados por aqui.</div>
+      <section class="card card--logs">
+        <div class="section-header">
+          <div>
+            <h2>Histórico de ações</h2>
+            <span class="section-subtitle">Saída dos serviços e integrações</span>
+          </div>
+        </div>
+        <div class="log-surface">
+          <pre id="out">Aguardando ações…</pre>
+        </div>
+      </section>
     </div>
-
-    <div class="actions" style="margin-top:8px;">
-      <button onclick="carregarExames()">🔄 Atualizar resultados</button>
-    </div>
-
-    <div id="examesLista" class="muted" style="margin-top:12px;">— selecione um prontuário —</div>
-
-    <hr style="margin:16px 0; border:none; border-top:1px solid #eee" />
-
-    <div class="actions">
-      <button id="btnIa" type="button" disabled>🪄 Sugerir diagnóstico (IA)</button>
-      <span id="gating-hint" class="muted">Preencha anamnese e adicione ao menos um exame com resultado.</span>
-    </div>
-
-    <label>Diagnóstico <span id="grav-badge" class="badge"></span></label>
-    <textarea id="diag" rows="8" placeholder="Aguardando anamnese e exames para liberar o diagnóstico..." disabled></textarea>
-  </section>
-
-  <!-- LISTAGEM -->
-  <section>
-    <h2>Prontuários</h2>
-    <div id="lista">— sem dados —</div>
-  </section>
-
-  <!-- LOG/SAÍDA -->
-  <section>
-    <h2>Saída</h2>
-    <pre id="out">Aguardando ações…</pre>
-  </section>
+  </main>
 
 <script>
+  // --------------- ícones utilitários
+  const ICONS = {
+    save: '<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M5 3h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm7 0v6h4V5.5L16.5 3H12Zm-4 10a1 1 0 0 0-1 1v5h10v-5a1 1 0 0 0-1-1H8Z" /></svg>',
+    broom: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M3 21h13"/><path d="M14.5 2.5 21 9l-7 7H7.5L3 11.5Z"/><path d="M6 11.5 11.5 17"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2Z"/></svg>',
+    list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>',
+    refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M20 11V4h-7"/><path d="M4 13v7h7"/><path d="M20 4 13.5 10.5a4.5 4.5 0 0 0-6.36 0L4 13"/></svg>',
+    sparkles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6Z"/><path d="m19 16 1 2.7L23 19l-2.1 1.3L21 23l-1.2-2.7L17 19l2.8-.3Z"/><path d="M5 16.5 6 19l2.5.5L6 20l-.5 2.5L4.9 20 3 19.5 4.9 19Z"/></svg>',
+    upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg>',
+    document: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M14 3v5h5"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>',
+    open: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="m9 18 6-6-6-6"/><path d="M5 18V6"/></svg>',
+    close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><path d="m7 7 10 10"/><path d="M17 7 7 17"/></svg>'
+  };
+
+  function iconSvg(name) {
+    return ICONS[name] || '';
+  }
+
+  function setButtonLabel(button, iconName, label) {
+    if (!button) return;
+    button.innerHTML = `${iconSvg(iconName)}<span>${label}</span>`;
+  }
+
+  function setButtonLoading(button, label) {
+    if (!button) return;
+    button.classList.add('is-loading');
+    button.innerHTML = `<span class="spinner" aria-hidden="true"></span><span>${label}</span>`;
+  }
+
+  function resetButtonLoading(button, iconName, label) {
+    if (!button) return;
+    button.classList.remove('is-loading');
+    setButtonLabel(button, iconName, label);
+  }
+
   // --------------- refs
   const out = document.getElementById('out');
   const nome = document.getElementById('nome');
@@ -163,11 +940,15 @@
   const chipInput = document.getElementById('chipInput');
   const lista = document.getElementById('lista');
   const selId = document.getElementById('sel-id');
+  const selNome = document.getElementById('sel-nome');
   const exmId = document.getElementById('exm-id');
   const exmNome = document.getElementById('exm-nome');
 
   const btnSalvar = document.getElementById('btnSalvar');
   const btnExcluir = document.getElementById('btnExcluir');
+  const btnListar = document.getElementById('btnListar');
+  const btnLimpar = document.getElementById('btnLimpar');
+  const btnAtualizarExames = document.getElementById('btnAtualizarExames');
 
   const examesCards = document.getElementById('examesSolicitadosCards');
   const examesLista = document.getElementById('examesLista');
@@ -181,13 +962,33 @@
   let prontuariosCache = [];
   let examesPorTipo = {};
 
+  function initButtons() {
+    setButtonLabel(btnSalvar, 'save', 'Salvar prontuário');
+    setButtonLabel(btnLimpar, 'broom', 'Limpar formulário');
+    setButtonLabel(btnExcluir, 'trash', 'Excluir prontuário');
+    setButtonLabel(btnListar, 'list', 'Atualizar listagem');
+    setButtonLabel(btnAtualizarExames, 'refresh', 'Atualizar resultados');
+    setButtonLabel(btnIa, 'sparkles', 'Sugerir diagnóstico (IA)');
+  }
+
   function atualizarEstadoSelecao() {
     if (prontuarioSelecionado) {
-      btnSalvar.textContent = '💾 Atualizar prontuário';
+      setButtonLabel(btnSalvar, 'save', 'Atualizar prontuário');
       btnExcluir.disabled = false;
     } else {
-      btnSalvar.textContent = '💾 Salvar prontuário';
+      setButtonLabel(btnSalvar, 'save', 'Salvar prontuário');
       btnExcluir.disabled = true;
+    }
+  }
+
+  function syncPacienteResumo() {
+    if (!selNome) return;
+    if (prontuarioSelecionado && pacienteSelecionadoNome) {
+      selNome.textContent = pacienteSelecionadoNome;
+    } else if (nome.value.trim()) {
+      selNome.textContent = nome.value.trim();
+    } else {
+      selNome.textContent = 'Em preenchimento';
     }
   }
 
@@ -198,20 +999,38 @@
     examesSolicitados.forEach((e, i) => {
       const div = document.createElement('div');
       div.className = 'chip';
-      div.innerHTML = `${e} <button title="Remover" onclick="remChip(${i})">✕</button>`;
+      const span = document.createElement('span');
+      span.textContent = e;
+      div.appendChild(span);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip-remove';
+      btn.innerHTML = iconSvg('close');
+      btn.title = 'Remover';
+      btn.addEventListener('click', () => remChip(i));
+      div.appendChild(btn);
       chips.appendChild(div);
     });
     chips.appendChild(prevInput);
     chipInput.value = '';
     renderExamCards();
   }
-  function remChip(i){ examesSolicitados.splice(i,1); renderChips(); }
+
+  function remChip(i) {
+    examesSolicitados.splice(i, 1);
+    renderChips();
+  }
+
   chipInput.addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter') {
       ev.preventDefault();
       const v = chipInput.value.trim();
-      if (v && !examesSolicitados.includes(v)) { examesSolicitados.push(v); renderChips(); }
-      else { chipInput.value = ''; }
+      if (v && !examesSolicitados.includes(v)) {
+        examesSolicitados.push(v);
+        renderChips();
+      } else {
+        chipInput.value = '';
+      }
     }
   });
 
@@ -297,7 +1116,9 @@
       const actionsTexto = document.createElement('div');
       actionsTexto.className = 'exam-actions';
       const salvarBtn = document.createElement('button');
-      salvarBtn.textContent = '📝 Salvar resultado textual';
+      salvarBtn.type = 'button';
+      salvarBtn.className = 'btn btn-secondary btn-sm';
+      setButtonLabel(salvarBtn, 'document', 'Salvar resultado textual');
       salvarBtn.onclick = () => salvarExameTextoCard(nomeExame, {
         dataId: dataInput.id,
         obsId: obsInput.id,
@@ -321,7 +1142,9 @@
       const actionsArquivo = document.createElement('div');
       actionsArquivo.className = 'exam-actions';
       const uploadBtn = document.createElement('button');
-      uploadBtn.textContent = '📎 Anexar arquivo';
+      uploadBtn.type = 'button';
+      uploadBtn.className = 'btn btn-outline btn-sm';
+      setButtonLabel(uploadBtn, 'upload', 'Anexar arquivo');
       uploadBtn.onclick = () => uploadExameCard(nomeExame, {
         dataId: dataInput.id,
         obsId: obsInput.id,
@@ -411,6 +1234,7 @@
   function syncPreviews(){ previewSint.value = sintomas.value; previewAnam.value = anamnese.value; }
   sintomas.addEventListener('input', syncPreviews);
   anamnese.addEventListener('input', () => { syncPreviews(); atualizarDisponibilidadeIA(); });
+  nome.addEventListener('input', () => { syncPacienteResumo(); });
 
   // --------------- badge gravidade
   function setBadge(gravidade) {
@@ -451,7 +1275,7 @@
   // --------------- IA
   btnIa.addEventListener('click', async () => {
     btnIa.disabled = true;
-    btnIa.textContent = 'Consultando IA...';
+    setButtonLoading(btnIa, 'Consultando IA...');
     try {
       const payload = {
         sintomas: sintomas.value || '',
@@ -482,7 +1306,7 @@
     } catch (e) {
       out.textContent = 'Erro na IA: ' + e.message;
     } finally {
-      btnIa.textContent = '🪄 Sugerir diagnóstico (IA)';
+      resetButtonLoading(btnIa, 'sparkles', 'Sugerir diagnóstico (IA)');
       atualizarDisponibilidadeIA();
     }
   });
@@ -536,18 +1360,26 @@
       const r = await fetch('/prontuarios');
       const arr = await r.json();
       prontuariosCache = Array.isArray(arr) ? arr : [];
-      if (!Array.isArray(arr) || arr.length === 0) { lista.innerHTML = '— sem dados —'; return; }
-      const rows = arr.map(p => `
+      if (!Array.isArray(arr) || arr.length === 0) {
+        lista.innerHTML = '<div class="empty-state muted">Nenhum prontuário cadastrado ainda.</div>';
+        return;
+      }
+      const rows = arr.map(p => {
+        const exames = Array.isArray(p.exames_solicitados) && p.exames_solicitados.length
+          ? p.exames_solicitados.map(escapeHtml).map(e => `<span class="table-chip">${e}</span>`).join('')
+          : '<span class="muted">Sem exames</span>';
+        return `
         <tr>
-          <td>${p.id}</td>
-          <td><strong>${escapeHtml(p.nome)}</strong><br><span class="muted">${escapeHtml(p.cpf)}</span></td>
-          <td>${escapeHtml(p.data_consulta)}</td>
-          <td><pre style="white-space:pre-wrap;max-width:420px">${escapeHtml(p.diagnostico || '')}</pre></td>
+          <td><span class="record-id">#${escapeHtml(String(p.id))}</span></td>
+          <td><div class="record-name">${escapeHtml(p.nome)}</div><div class="record-cpf muted">${escapeHtml(p.cpf)}</div></td>
+          <td><span class="record-date">${escapeHtml(p.data_consulta)}</span></td>
+          <td><div class="diagnostico-resumo">${escapeHtml(p.diagnostico || '')}</div></td>
           <td>
-            <div class="muted">${(p.exames_solicitados||[]).map(escapeHtml).join(', ')}</div>
-            <button onclick="selecionarProntuario(${p.id})">Selecionar</button>
+            <div class="records-exams">${exames}</div>
+            <button class="btn btn-link" type="button" onclick="selecionarProntuario(${p.id})">${iconSvg('open')}<span>Abrir prontuário</span></button>
           </td>
-        </tr>`).join('');
+        </tr>`;
+      }).join('');
       lista.innerHTML = `
         <table>
           <thead><tr><th>ID</th><th>Paciente</th><th>Data</th><th>Diagnóstico</th><th>Ações</th></tr></thead>
@@ -577,6 +1409,7 @@
       : [];
     renderChips();
     syncPreviews();
+    syncPacienteResumo();
   }
 
   function selecionarProntuario(id, _nomePaciente='', opts = {}) {
@@ -586,6 +1419,7 @@
     selId.textContent = String(prontuarioSelecionado);
     exmId.textContent = String(prontuarioSelecionado);
     exmNome.textContent = pacienteSelecionadoNome || '—';
+    syncPacienteResumo();
     if (opts.atualizarForm !== false) preencherFormulario(atual);
     syncPreviews();
     carregarExames();
@@ -608,6 +1442,7 @@
     renderExamCards();
     setBadge('');
     syncPreviews();
+    syncPacienteResumo();
     out.textContent = 'Formulário limpo.';
     selId.textContent = '—';
     exmId.textContent = '—';
@@ -705,9 +1540,11 @@
   function escapeAttr(s='') { return String(s).replaceAll('\\','\\\\').replaceAll("'", "\\'"); }
 
   // boot
+  initButtons();
   renderChips();
   listar();
   syncPreviews();
+  syncPacienteResumo();
   atualizarDisponibilidadeIA();
   atualizarEstadoSelecao();
 </script>
