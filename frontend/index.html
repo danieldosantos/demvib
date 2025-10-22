@@ -1302,7 +1302,37 @@
       const sug = data.sugestao;
       diag.value = formatSugestaoCompleta(sug);
       setBadge(sug?.gravidade);
-      out.textContent = JSON.stringify(sug, null, 2);
+
+      const sugestaoJson = (() => {
+        try { return JSON.stringify(sug, null, 2); } catch { return ''; }
+      })();
+      const sugestaoBase = sugestaoJson
+        ? `Sugestão da IA:\n${sugestaoJson}`
+        : 'Sugestão da IA registrada.';
+
+      const textoDiagnostico = (diag.value || '').trim();
+      if (textoDiagnostico) {
+        setButtonLoading(btnIa, 'Salvando diagnóstico...');
+        const resultadoSalvar = await salvar({ silencioso: true });
+
+        if (resultadoSalvar?.sucesso) {
+          const retornoServidor = resultadoSalvar?.texto
+            ? `\n\nRetorno do servidor:\n${resultadoSalvar.texto}`
+            : '';
+          out.textContent = `${sugestaoBase}\n\nDiagnóstico da IA salvo automaticamente no prontuário.${retornoServidor}`;
+        } else if (resultadoSalvar?.motivo === 'campos-obrigatorios') {
+          out.textContent = `${sugestaoBase}\n\nNão foi possível salvar automaticamente: preencha Nome, CPF e Data da consulta e salve novamente.`;
+        } else {
+          const mensagemErro = resultadoSalvar?.mensagem
+            || 'Não foi possível salvar automaticamente o diagnóstico sugerido.';
+          const retornoServidor = resultadoSalvar?.texto
+            ? `\n\nRetorno do servidor:\n${resultadoSalvar.texto}`
+            : '';
+          out.textContent = `${sugestaoBase}\n\n${mensagemErro}${retornoServidor}`;
+        }
+      } else {
+        out.textContent = sugestaoBase;
+      }
     } catch (e) {
       out.textContent = 'Erro na IA: ' + e.message;
     } finally {
@@ -1319,9 +1349,10 @@
     return true;
   }
 
-  async function salvar() {
+  async function salvar(opts = {}) {
+    const { silencioso = false } = opts;
     try {
-      if (!validaCampos()) return;
+      if (!validaCampos()) return { sucesso: false, motivo: 'campos-obrigatorios' };
 
       // IMPORTANTE: backend exige "diagnostico" -> usamos "Em avaliação" se vazio
       const diagnosticoFinal = (diag.value || '').trim() || 'Em avaliação';
@@ -1346,13 +1377,18 @@
         body: JSON.stringify(body)
       });
       const txt = await r.text();
-      out.textContent = txt;
-      listar();
+      if (!silencioso) out.textContent = txt;
+      await listar();
       try {
         const j = JSON.parse(txt);
         if (j.id) selecionarProntuario(j.id, body.nome, { atualizarForm: false });
+        return { sucesso: r.ok, texto: txt, json: j, status: r.status };
       } catch {}
-    } catch (e) { out.textContent = 'Erro ao salvar: ' + e.message; }
+      return { sucesso: r.ok, texto: txt, status: r.status };
+    } catch (e) {
+      if (!silencioso) out.textContent = 'Erro ao salvar: ' + e.message;
+      return { sucesso: false, erro: e, mensagem: 'Erro ao salvar: ' + e.message };
+    }
   }
 
   async function listar() {
